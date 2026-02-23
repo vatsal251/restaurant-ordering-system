@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import api from '../lib/api'
 import { io } from 'socket.io-client'
@@ -32,6 +32,7 @@ const NEXT_ACTIONS = {
 
 export default function Dashboard() {
     const { user, logout } = useAuthStore()
+    const navigate = useNavigate()
     const [orders, setOrders] = useState([])
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState('active') // 'active' | 'all'
@@ -59,6 +60,10 @@ export default function Dashboard() {
         try {
             await api.patch(`/api/orders/${orderId}/status`, { status })
             setOrders(o => o.map(ord => ord.id === orderId ? { ...ord, status } : ord))
+            // Auto-navigate to seal dispatch when marking ready for pickup
+            if (status === 'ready_for_pickup') {
+                navigate(`/orders/${orderId}/seal-dispatch`)
+            }
         } catch { alert('Failed to update status') }
         finally { setUpdatingId(null) }
     }
@@ -160,15 +165,6 @@ export default function Dashboard() {
                                         >
                                             {updatingId === order.id ? 'Updating…' : NEXT_ACTIONS[order.status].label}
                                         </button>
-                                    )}
-                                    {order.status === 'ready_for_pickup' && (
-                                        <Link
-                                            to={`/orders/${order.id}/seal-dispatch`}
-                                            id={`seal-${order.id}`}
-                                            className="btn-outline text-sm py-2 flex-1 text-center"
-                                        >
-                                            📸 Take Seal Photo
-                                        </Link>
                                     )}
                                     {order.status === 'placed' && (
                                         <button

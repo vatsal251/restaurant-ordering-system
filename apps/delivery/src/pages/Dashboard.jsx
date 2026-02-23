@@ -171,25 +171,52 @@ export default function Dashboard() {
                         <div className="space-y-3">
                             {available.map(order => (
                                 <div key={order.id} id={`order-${order.id}`} className="card space-y-3">
+                                    {/* Header */}
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <p className="font-semibold">#{order.id.slice(-6).toUpperCase()}</p>
-                                            <p className="text-sm text-gray-400">
-                                                🏪 {order.restaurant?.name}
+                                            <p className="text-xs text-gray-500 mt-0.5">
+                                                {new Date(order.createdAt).toLocaleTimeString()}
                                             </p>
-                                            <p className="text-xs text-gray-500 mt-0.5">📍 {order.deliveryAddress}</p>
                                         </div>
-                                        <p className="text-brand-500 font-bold text-lg">+₹40</p>
+                                        <p className="text-green-400 font-bold text-lg">+₹40</p>
                                     </div>
+
+                                    {/* Pickup → Drop */}
+                                    <div className="space-y-1.5 text-sm">
+                                        <div className="flex items-start gap-2">
+                                            <span className="text-yellow-400 mt-0.5">🏪</span>
+                                            <div>
+                                                <p className="font-medium">{order.restaurant?.name}</p>
+                                                <p className="text-gray-500 text-xs">{order.restaurant?.address || 'Pickup location'}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-start gap-2">
+                                            <span className="text-brand-500 mt-0.5">📍</span>
+                                            <div>
+                                                <p className="font-medium text-gray-300">{order.customer?.name}</p>
+                                                <p className="text-gray-500 text-xs">{order.deliveryAddress}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Items preview */}
+                                    <p className="text-xs text-gray-500 bg-white/5 rounded-lg px-3 py-2">
+                                        {order.orderItems?.slice(0, 2).map(i => `${i.quantity}× ${i.menuItem?.name}`).join(', ')}
+                                        {order.orderItems?.length > 2 ? ` +${order.orderItems.length - 2} more` : ''}
+                                        {' '} · <span className="text-white">₹{order.totalAmount}</span>
+                                    </p>
+
+                                    {/* Accept button */}
                                     <button
                                         id={`accept-${order.id}`}
                                         onClick={() => acceptOrder(order.id)}
                                         disabled={updatingId === order.id || !!activeDelivery}
-                                        className="btn-primary w-full text-sm py-2.5 disabled:opacity-50"
+                                        className="btn-primary w-full text-sm py-3 disabled:opacity-50 font-semibold"
                                     >
                                         {updatingId === order.id ? 'Accepting…'
-                                            : activeDelivery ? 'Finish current delivery first'
-                                                : '✅ Accept Order'}
+                                            : activeDelivery ? '⚠️ Finish current delivery first'
+                                                : '✅ Accept & Pickup'}
                                     </button>
                                 </div>
                             ))}

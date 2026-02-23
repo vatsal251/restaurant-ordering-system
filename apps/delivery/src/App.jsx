@@ -5,7 +5,8 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import SealCheckpoint from './pages/SealCheckpoint'
-import { Earnings, Profile } from './pages/Stubs'
+import Earnings from './pages/Earnings'
+import Profile from './pages/Profile'
 
 const ProtectedRoute = ({ children }) => {
     const token = useAuthStore(s => s.token)

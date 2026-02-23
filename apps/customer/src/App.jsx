@@ -16,8 +16,8 @@ import OrderTracking from './pages/OrderTracking'
 // Unique Seal Feature
 import SealVerify from './pages/SealVerify'
 
-// Stubs (not yet built)
-import { Profile } from './pages/Stubs'
+// Phase 5 — Polish pages
+import Profile from './pages/Profile'
 
 const ProtectedRoute = ({ children }) => {
     const token = useAuthStore(s => s.token)

@@ -6,7 +6,9 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Menu from './pages/Menu'
 import SealDispatch from './pages/SealDispatch'
-import { Orders, OrderDetail, Analytics, Profile } from './pages/Stubs'
+import Analytics from './pages/Analytics'
+import Profile from './pages/Profile'
+import { Orders, OrderDetail } from './pages/Stubs'
 
 const ProtectedRoute = ({ children }) => {
     const token = useAuthStore(s => s.token)
