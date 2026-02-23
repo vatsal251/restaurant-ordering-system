@@ -1,7 +1,0 @@
-node_modules/
-backend/uploads/*
-!backend/uploads/.gitkeep
-!backend/uploads/seals/.gitkeep
-backend/.env
-frontend/.env
-frontend/dist/
