@@ -1,0 +1,18 @@
+{
+  "name": "food-platform",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "backend",
+    "shared"
+  ],
+  "scripts": {
+    "dev:customer": "npm run dev --workspace=apps/customer",
+    "dev:delivery": "npm run dev --workspace=apps/delivery",
+    "dev:restaurant": "npm run dev --workspace=apps/restaurant",
+    "dev:admin": "npm run dev --workspace=apps/admin",
+    "dev:backend": "npm run dev --workspace=backend",
+    "install:all": "npm install"
+  }
+}

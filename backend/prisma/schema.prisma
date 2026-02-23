@@ -1,0 +1,208 @@
+// This file is the Prisma schema for the FoodRush platform
+// Run: npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  phone        String?
+  role         Role
+  passwordHash String
+  isVerified   Boolean  @default(false)
+  isBlocked    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  // Relations
+  customerOrders Order[]        @relation("CustomerOrders")
+  deliveryOrders Order[]        @relation("DeliveryOrders")
+  restaurant     Restaurant?
+  reviews        Review[]
+  notifications  Notification[]
+
+  @@map("users")
+}
+
+enum Role {
+  customer
+  delivery_partner
+  restaurant_owner
+  admin
+}
+
+model Restaurant {
+  id          String   @id @default(cuid())
+  ownerId     String   @unique
+  owner       User     @relation(fields: [ownerId], references: [id])
+  name        String
+  address     String
+  lat         Float?
+  lng         Float?
+  cuisineType String?
+  rating      Float    @default(4.0)
+  isOpen      Boolean  @default(true)
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+
+  menuItems MenuItem[]
+  orders    Order[]
+  reviews   Review[]
+
+  @@map("restaurants")
+}
+
+model MenuItem {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  name         String
+  description  String?
+  price        Float
+  category     String?
+  imageUrl     String?
+  isAvailable  Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+
+  orderItems OrderItem[]
+
+  @@map("menu_items")
+}
+
+model Order {
+  id                String        @id @default(cuid())
+  customerId        String
+  customer          User          @relation("CustomerOrders", fields: [customerId], references: [id])
+  restaurantId      String
+  restaurant        Restaurant    @relation(fields: [restaurantId], references: [id])
+  deliveryPartnerId String?
+  deliveryPartner   User?         @relation("DeliveryOrders", fields: [deliveryPartnerId], references: [id])
+  status            OrderStatus   @default(placed)
+  totalAmount       Float
+  paymentStatus     PaymentStatus @default(pending)
+  deliveryAddress   String
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  orderItems       OrderItem[]
+  payment          Payment?
+  reviews          Review[]           @relation("OrderReviews")
+  tracking         DeliveryTracking[]
+  sealVerification SealVerification?
+  notifications    Notification[]
+
+  @@map("orders")
+}
+
+enum OrderStatus {
+  placed
+  confirmed
+  preparing
+  ready_for_pickup
+  picked_up
+  delivered
+  cancelled
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  failed
+  refunded
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id])
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity   Int
+  unitPrice  Float
+
+  @@map("order_items")
+}
+
+model DeliveryTracking {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  lat       Float
+  lng       Float
+  updatedAt DateTime @default(now())
+
+  @@map("delivery_tracking")
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  orderId           String        @unique
+  order             Order         @relation(fields: [orderId], references: [id])
+  razorpayPaymentId String?
+  amount            Float
+  method            String?
+  status            PaymentStatus @default(pending)
+  createdAt         DateTime      @default(now())
+
+  @@map("payments")
+}
+
+model Review {
+  id           String     @id @default(cuid())
+  customerId   String
+  customer     User       @relation(fields: [customerId], references: [id])
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  orderId      String
+  order        Order      @relation("OrderReviews", fields: [orderId], references: [id])
+  rating       Int
+  comment      String?
+  createdAt    DateTime   @default(now())
+
+  @@map("reviews")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  orderId   String?
+  order     Order?   @relation(fields: [orderId], references: [id])
+  type      String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+// 🔒 SEAL VERIFICATION FEATURE
+model SealVerification {
+  id               String       @id @default(cuid())
+  orderId          String       @unique
+  order            Order        @relation(fields: [orderId], references: [id])
+  dispatchPhotoUrl String? // Taken by restaurant at dispatch
+  pickupPhotoUrl   String? // Taken by delivery partner at pickup (chain of custody)
+  customerPhotoUrl String? // Taken by customer on receipt
+  customerVerdict  SealVerdict? // Customer's manual judgment
+  disputeRaised    Boolean      @default(false)
+  resolvedByAdmin  Boolean      @default(false)
+  adminNotes       String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@map("seal_verifications")
+}
+
+enum SealVerdict {
+  intact
+  suspicious
+  tampered
+}

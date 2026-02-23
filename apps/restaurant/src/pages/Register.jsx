@@ -1,0 +1,122 @@
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuthStore } from '../store/authStore'
+import api from '../lib/api'
+
+export default function Register() {
+    const [form, setForm] = useState({
+        name: '', email: '', phone: '', password: '', confirmPassword: '',
+        restaurantName: '', restaurantAddress: ''
+    })
+    const [error, setError] = useState('')
+    const [loading, setLoading] = useState(false)
+    const { setAuth } = useAuthStore()
+    const navigate = useNavigate()
+
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+        if (form.password !== form.confirmPassword) {
+            setError('Passwords do not match')
+            return
+        }
+        setLoading(true); setError('')
+        try {
+            const { data } = await api.post('/api/auth/register', {
+                name: form.name,
+                email: form.email,
+                phone: form.phone,
+                password: form.password,
+                role: 'restaurant_owner',
+                restaurantName: form.restaurantName,
+                restaurantAddress: form.restaurantAddress,
+            })
+            setAuth(data.user, data.token)
+            navigate('/')
+        } catch (err) {
+            setError(err.response?.data?.message || 'Registration failed')
+        } finally { setLoading(false) }
+    }
+
+    const update = (field) => (e) => setForm({ ...form, [field]: e.target.value })
+
+    return (
+        <div className="min-h-screen flex items-center justify-center p-4 py-10">
+            <div className="w-full max-w-md">
+                {/* Header */}
+                <div className="text-center mb-8">
+                    <div className="inline-flex items-center gap-2 mb-3">
+                        <span className="text-4xl">🍽️</span>
+                        <h1 className="text-3xl font-extrabold text-brand-500">FoodRush</h1>
+                    </div>
+                    <p className="text-gray-400">Register your restaurant and start receiving orders</p>
+                </div>
+
+                {/* Form */}
+                <div className="card space-y-4">
+                    {error && (
+                        <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl">
+                            {error}
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* Section: Owner Info */}
+                        <p className="text-xs font-semibold text-brand-500 uppercase tracking-wider">Owner Details</p>
+                        <div>
+                            <label className="text-sm text-gray-400 mb-1.5 block">Full Name</label>
+                            <input id="name" type="text" className="input" placeholder="Owner's Name"
+                                value={form.name} onChange={update('name')} required />
+                        </div>
+                        <div>
+                            <label className="text-sm text-gray-400 mb-1.5 block">Email Address</label>
+                            <input id="email" type="email" className="input" placeholder="owner@restaurant.com"
+                                value={form.email} onChange={update('email')} required />
+                        </div>
+                        <div>
+                            <label className="text-sm text-gray-400 mb-1.5 block">Phone Number</label>
+                            <input id="phone" type="tel" className="input" placeholder="+91 XXXXX XXXXX"
+                                value={form.phone} onChange={update('phone')} required />
+                        </div>
+                        <div>
+                            <label className="text-sm text-gray-400 mb-1.5 block">Password</label>
+                            <input id="password" type="password" className="input" placeholder="Min. 8 characters"
+                                value={form.password} onChange={update('password')} required minLength={8} />
+                        </div>
+                        <div>
+                            <label className="text-sm text-gray-400 mb-1.5 block">Confirm Password</label>
+                            <input id="confirm-password" type="password" className="input" placeholder="Re-enter password"
+                                value={form.confirmPassword} onChange={update('confirmPassword')} required minLength={8} />
+                        </div>
+
+                        {/* Section: Restaurant Info */}
+                        <p className="text-xs font-semibold text-brand-500 uppercase tracking-wider pt-2">Restaurant Details</p>
+                        <div>
+                            <label className="text-sm text-gray-400 mb-1.5 block">Restaurant Name</label>
+                            <input id="restaurant-name" type="text" className="input" placeholder="e.g. Spice Garden"
+                                value={form.restaurantName} onChange={update('restaurantName')} required />
+                        </div>
+                        <div>
+                            <label className="text-sm text-gray-400 mb-1.5 block">Address</label>
+                            <input id="restaurant-address" type="text" className="input" placeholder="Full restaurant address"
+                                value={form.restaurantAddress} onChange={update('restaurantAddress')} required />
+                        </div>
+
+                        <p className="text-xs text-gray-500 bg-white/5 rounded-xl p-3">
+                            ℹ️ Your restaurant will be reviewed and approved by the admin before going live.
+                        </p>
+
+                        <button id="register-btn" type="submit" disabled={loading}
+                            className="btn-primary w-full disabled:opacity-50">
+                            {loading ? 'Submitting…' : '🍽️ Register Restaurant'}
+                        </button>
+                    </form>
+
+                    <p className="text-center text-sm text-gray-400">
+                        Already registered?{' '}
+                        <Link to="/login" className="text-brand-500 hover:underline font-medium">Sign in</Link>
+                    </p>
+                </div>
+            </div>
+        </div>
+    )
+}
