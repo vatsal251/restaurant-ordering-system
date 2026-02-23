@@ -35,8 +35,10 @@ export default function Dashboard() {
     const navigate = useNavigate()
     const [orders, setOrders] = useState([])
     const [loading, setLoading] = useState(true)
-    const [activeTab, setActiveTab] = useState('active') // 'active' | 'all'
+    const [activeTab, setActiveTab] = useState('active')
     const [updatingId, setUpdatingId] = useState(null)
+    const [isOpen, setIsOpen] = useState(true)
+    const [togglingOpen, setTogglingOpen] = useState(false)
 
     const fetchOrders = useCallback(async () => {
         try {
@@ -48,12 +50,27 @@ export default function Dashboard() {
 
     useEffect(() => {
         fetchOrders()
+        // Load restaurant open status
+        api.get('/api/restaurants/me/profile').then(r => setIsOpen(r.data.isOpen)).catch(() => { })
         // Real-time socket for new orders
         const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3000')
         socket.emit('JOIN_RESTAURANT_ROOM', { userId: user?.id })
-        socket.on('NEW_ORDER', () => fetchOrders())
+        socket.on('NEW_ORDER', () => {
+            fetchOrders()
+            // Play a notification sound
+            try { new Audio('https://www.soundjay.com/buttons/sounds/button-09.mp3').play() } catch { }
+        })
         return () => socket.disconnect()
     }, [fetchOrders, user])
+
+    const toggleOpen = async () => {
+        setTogglingOpen(true)
+        try {
+            await api.patch('/api/restaurants/me/profile', { isOpen: !isOpen })
+            setIsOpen(o => !o)
+        } catch { alert('Failed to update status') }
+        finally { setTogglingOpen(false) }
+    }
 
     const updateStatus = async (orderId, status) => {
         setUpdatingId(orderId)
@@ -79,6 +96,18 @@ export default function Dashboard() {
                     <span className="font-bold text-brand-500">FoodRush Restaurant</span>
                 </div>
                 <div className="flex items-center gap-3">
+                    {/* Open / Closed toggle */}
+                    <button
+                        onClick={toggleOpen}
+                        disabled={togglingOpen}
+                        className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border font-semibold transition-all ${isOpen
+                                ? 'bg-green-500/10 text-green-400 border-green-500/30 hover:bg-green-500/20'
+                                : 'bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500/20'
+                            }`}
+                    >
+                        <span className={`w-2 h-2 rounded-full ${isOpen ? 'bg-green-400' : 'bg-red-400'} ${!togglingOpen && 'animate-pulse'}`} />
+                        {togglingOpen ? '...' : isOpen ? 'Open' : 'Closed'}
+                    </button>
                     <Link to="/menu" className="text-gray-400 hover:text-white text-sm">Menu</Link>
                     <Link to="/analytics" className="text-gray-400 hover:text-white text-sm">Analytics</Link>
                     <button onClick={logout} className="text-gray-500 hover:text-white text-sm">Logout</button>

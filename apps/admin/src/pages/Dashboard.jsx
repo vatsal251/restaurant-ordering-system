@@ -79,6 +79,9 @@ export default function AdminDashboard() {
                         {/* ─── OVERVIEW ─── */}
                         {tab === 'overview' && (
                             <div className="space-y-5">
+                                {/* Revenue bar chart — 7 days */}
+                                <RevenueChart orders={orders} />
+
                                 <div className="grid grid-cols-2 gap-3">
                                     {[
                                         { label: 'Total Orders', value: stats?.totalOrders ?? orders.length, color: 'text-brand-500', emoji: '📋' },
@@ -113,6 +116,7 @@ export default function AdminDashboard() {
                             </div>
                         )}
 
+
                         {/* ─── USERS ─── */}
                         {tab === 'users' && (
                             <div className="space-y-3">
@@ -127,8 +131,8 @@ export default function AdminDashboard() {
                                             <p className="text-xs text-gray-500 truncate">{u.email}</p>
                                             <div className="flex items-center gap-2 mt-0.5">
                                                 <span className={`text-xs px-2 py-0.5 rounded-full ${u.role === 'customer' ? 'bg-orange-500/10 text-orange-400' :
-                                                        u.role === 'delivery_partner' ? 'bg-green-500/10 text-green-400' :
-                                                            'bg-purple-500/10 text-purple-400'
+                                                    u.role === 'delivery_partner' ? 'bg-green-500/10 text-green-400' :
+                                                        'bg-purple-500/10 text-purple-400'
                                                     }`}>{u.role.replace('_', ' ')}</span>
                                                 {u.isBlocked && <span className="text-xs bg-red-500/10 text-red-400 px-2 py-0.5 rounded-full">Blocked</span>}
                                             </div>
@@ -137,8 +141,8 @@ export default function AdminDashboard() {
                                             id={`block-${u.id}`}
                                             onClick={() => blockUser(u.id, u.isBlocked)}
                                             className={`text-xs px-3 py-1.5 rounded-lg border transition-colors flex-shrink-0 ${u.isBlocked
-                                                    ? 'border-green-500/30 text-green-400 hover:bg-green-500/10'
-                                                    : 'border-red-500/30 text-red-400 hover:bg-red-500/10'
+                                                ? 'border-green-500/30 text-green-400 hover:bg-green-500/10'
+                                                : 'border-red-500/30 text-red-400 hover:bg-red-500/10'
                                                 }`}
                                         >{u.isBlocked ? 'Unblock' : 'Block'}</button>
                                     </div>
@@ -183,9 +187,9 @@ export default function AdminDashboard() {
                                                 <p className="text-xs text-gray-500">{new Date(s.createdAt).toLocaleString('en-IN')}</p>
                                             </div>
                                             <span className={`text-xs px-2 py-1 rounded-full border ${s.customerVerdict === 'intact' ? 'bg-green-500/10 text-green-400 border-green-400/30' :
-                                                    s.customerVerdict === 'suspicious' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-400/30' :
-                                                        s.customerVerdict === 'tampered' ? 'bg-red-500/10 text-red-400 border-red-400/30' :
-                                                            'bg-white/5 text-gray-400 border-white/10'
+                                                s.customerVerdict === 'suspicious' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-400/30' :
+                                                    s.customerVerdict === 'tampered' ? 'bg-red-500/10 text-red-400 border-red-400/30' :
+                                                        'bg-white/5 text-gray-400 border-white/10'
                                                 }`}>
                                                 {s.customerVerdict ? `Verdict: ${s.customerVerdict}` : 'Pending'}
                                             </span>
@@ -251,7 +255,75 @@ export default function AdminDashboard() {
     )
 }
 
+function RevenueChart({ orders }) {
+    // Build last 7 days revenue
+    const days = Array.from({ length: 7 }).map((_, i) => {
+        const d = new Date()
+        d.setDate(d.getDate() - (6 - i))
+        return {
+            label: d.toLocaleDateString('en-IN', { weekday: 'short' }),
+            date: d.toDateString(),
+        }
+    })
+
+    const chartData = days.map(day => {
+        const revenue = orders
+            .filter(o => new Date(o.createdAt).toDateString() === day.date)
+            .reduce((sum, o) => sum + (o.totalAmount || 0), 0)
+        return { ...day, revenue }
+    })
+
+    const maxRevenue = Math.max(...chartData.map(d => d.revenue), 1)
+    const totalRevenue = chartData.reduce((s, d) => s + d.revenue, 0)
+
+    return (
+        <div className="card space-y-4">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="font-semibold">📈 Revenue (Last 7 Days)</h2>
+                    <p className="text-xs text-gray-500 mt-0.5">Total: <span className="text-green-400 font-semibold">₹{totalRevenue.toLocaleString('en-IN')}</span></p>
+                </div>
+                <div className="text-right">
+                    <p className="text-xs text-gray-500">Peak</p>
+                    <p className="text-brand-500 font-bold">₹{Math.max(...chartData.map(d => d.revenue)).toLocaleString('en-IN')}</p>
+                </div>
+            </div>
+
+            {/* Bar chart */}
+            <div className="flex items-end gap-1.5 h-28">
+                {chartData.map((day, i) => {
+                    const heightPct = (day.revenue / maxRevenue) * 100
+                    const isToday = i === 6
+                    return (
+                        <div key={day.label} className="flex-1 flex flex-col items-center gap-1 group relative">
+                            {/* Tooltip */}
+                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                                ₹{day.revenue.toLocaleString('en-IN')}
+                            </div>
+                            <div className="w-full flex items-end justify-center" style={{ height: '100%' }}>
+                                <div
+                                    className={`w-full rounded-t-lg transition-all duration-700 ${isToday ? 'bg-brand-500' : 'bg-white/10 group-hover:bg-white/20'
+                                        }`}
+                                    style={{ height: `${Math.max(heightPct, 4)}%` }}
+                                />
+                            </div>
+                            <p className={`text-xs ${isToday ? 'text-brand-500 font-semibold' : 'text-gray-500'}`}>
+                                {day.label}
+                            </p>
+                        </div>
+                    )
+                })}
+            </div>
+
+            {orders.length === 0 && (
+                <p className="text-center text-xs text-gray-600">Place some orders to see revenue data</p>
+            )}
+        </div>
+    )
+}
+
 function DisputeCard({ dispute, onResolve }) {
+
     const [notes, setNotes] = useState('')
     const [resolving, setResolving] = useState(false)
 
@@ -270,8 +342,8 @@ function DisputeCard({ dispute, onResolve }) {
                     <p className="text-xs text-gray-500">{new Date(dispute.createdAt).toLocaleString('en-IN')}</p>
                 </div>
                 <span className={`text-xs px-2 py-1 rounded-full border ${dispute.customerVerdict === 'tampered'
-                        ? 'bg-red-500/10 text-red-400 border-red-400/30'
-                        : 'bg-yellow-500/10 text-yellow-400 border-yellow-400/30'
+                    ? 'bg-red-500/10 text-red-400 border-red-400/30'
+                    : 'bg-yellow-500/10 text-yellow-400 border-yellow-400/30'
                     }`}>
                     {dispute.customerVerdict}
                 </span>

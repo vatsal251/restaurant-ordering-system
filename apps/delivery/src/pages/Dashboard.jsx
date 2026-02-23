@@ -17,6 +17,7 @@ export default function Dashboard() {
     const [tab, setTab] = useState('available')
     const [loading, setLoading] = useState(true)
     const [updatingId, setUpdatingId] = useState(null)
+    const [isOnline, setIsOnline] = useState(true)
 
     const fetchAvailable = useCallback(async () => {
         try {
@@ -34,12 +35,17 @@ export default function Dashboard() {
     }, [user])
 
     useEffect(() => {
-        fetchAvailable()
+        if (isOnline) {
+            fetchAvailable()
+        } else {
+            setAvailable([])
+            setLoading(false)
+        }
         fetchMyOrders()
         const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3000')
-        socket.on('NEW_ORDER', fetchAvailable)
+        if (isOnline) socket.on('NEW_ORDER', fetchAvailable)
         return () => socket.disconnect()
-    }, [fetchAvailable, fetchMyOrders])
+    }, [fetchAvailable, fetchMyOrders, isOnline])
 
     const acceptOrder = async (orderId) => {
         setUpdatingId(orderId)
@@ -91,6 +97,17 @@ export default function Dashboard() {
                     <span className="font-bold text-brand-500">FoodRush Delivery</span>
                 </div>
                 <div className="flex items-center gap-3">
+                    {/* Online / Offline toggle */}
+                    <button
+                        onClick={() => setIsOnline(o => !o)}
+                        className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border font-semibold transition-all ${isOnline
+                                ? 'bg-green-500/10 text-green-400 border-green-500/30 hover:bg-green-500/20'
+                                : 'bg-gray-500/10 text-gray-400 border-gray-500/30 hover:bg-gray-500/20'
+                            }`}
+                    >
+                        <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-400 animate-pulse' : 'bg-gray-500'}`} />
+                        {isOnline ? 'Online' : 'Offline'}
+                    </button>
                     <Link to="/earnings" className="text-gray-400 hover:text-white text-sm">₹ Earnings</Link>
                     <Link to="/profile" className="text-gray-400 hover:text-white text-sm">Profile</Link>
                     <button onClick={logout} className="text-gray-500 hover:text-white text-sm">Logout</button>
@@ -98,7 +115,16 @@ export default function Dashboard() {
             </div>
 
             <div className="px-4 pt-5 pb-8 space-y-5">
-                {/* Active delivery banner */}
+                {/* Offline banner */}
+                {!isOnline && (
+                    <div className="card border border-gray-500/30 bg-gray-500/5 text-center py-6 space-y-2">
+                        <div className="text-4xl">😴</div>
+                        <p className="font-semibold text-gray-400">You are Offline</p>
+                        <p className="text-gray-500 text-sm">Go online to start receiving delivery requests</p>
+                        <button onClick={() => setIsOnline(true)} className="btn-primary mx-auto mt-2 px-6">Go Online</button>
+                    </div>
+                )}
+
                 {activeDelivery && (
                     <div className="card border border-brand-500/40 bg-brand-500/5 space-y-3">
                         <p className="text-brand-500 font-semibold text-sm">🚴 Currently Delivering</p>
