@@ -45,20 +45,18 @@ export default function Profile() {
                 </div>
 
                 {/* Quick actions grid */}
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                    <Link to="/favourites" className="card flex items-center gap-3 p-4 hover:bg-white/5 transition-colors group">
+                <div className="grid grid-cols-3 gap-3 mb-6">
+                    <Link to="/favourites" className="card flex flex-col items-center justify-center p-3 hover:bg-white/5 transition-colors group">
                         <div className="w-10 h-10 rounded-full bg-brand-500/10 flex items-center justify-center text-xl group-hover:bg-brand-500/20 transition-colors">♥</div>
-                        <div>
-                            <p className="font-semibold text-white">Favourites</p>
-                            <p className="text-xs text-gray-400">Saved places</p>
-                        </div>
+                        <p className="font-semibold text-white mt-2 text-sm">Favourites</p>
                     </Link>
-                    <Link to="/orders" className="card flex items-center gap-3 p-4 hover:bg-white/5 transition-colors group">
+                    <Link to="/addresses" className="card flex flex-col items-center justify-center p-3 hover:bg-white/5 transition-colors group">
+                        <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-xl group-hover:bg-green-500/20 transition-colors">📍</div>
+                        <p className="font-semibold text-white mt-2 text-sm">Addresses</p>
+                    </Link>
+                    <Link to="/orders" className="card flex flex-col items-center justify-center p-3 hover:bg-white/5 transition-colors group">
                         <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-xl group-hover:bg-blue-500/20 transition-colors">📦</div>
-                        <div>
-                            <p className="font-semibold text-white">Orders</p>
-                            <p className="text-xs text-gray-400">History & config</p>
-                        </div>
+                        <p className="font-semibold text-white mt-2 text-sm">Orders</p>
                     </Link>
                 </div>
 

@@ -22,6 +22,7 @@ import Profile from './pages/Profile'
 // Phase 7 — Advanced Parity
 import Search from './pages/Search'
 import Favourites from './pages/Favourites'
+import Addresses from './pages/Addresses'
 import SurpriseMe from './pages/SurpriseMe'
 
 const ProtectedRoute = ({ children }) => {
@@ -47,6 +48,7 @@ export default function App() {
                 <Route path="/orders/:id" element={<ProtectedRoute><OrderTracking /></ProtectedRoute>} />
                 <Route path="/orders/:id/seal" element={<ProtectedRoute><SealVerify /></ProtectedRoute>} />
                 <Route path="/favourites" element={<ProtectedRoute><Favourites /></ProtectedRoute>} />
+                <Route path="/addresses" element={<ProtectedRoute><Addresses /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/surprise" element={<ProtectedRoute><SurpriseMe /></ProtectedRoute>} />
 

@@ -270,6 +270,30 @@ router.patch('/:id/status', authenticate, async (req, res) => {
     }
 })
 
+// POST /api/orders/:id/cancel — Customer cancels an order before confirmation
+router.post('/:id/cancel', authenticate, async (req, res) => {
+    try {
+        const order = await prisma.order.findUnique({ where: { id: req.params.id } })
+
+        if (!order) return res.status(404).json({ message: 'Order not found' })
+        if (order.customerId !== req.user.id) return res.status(403).json({ message: 'Unauthorized' })
+        if (order.status !== 'placed') return res.status(400).json({ message: 'Order cannot be cancelled at this stage' })
+
+        const updatedOrder = await prisma.order.update({
+            where: { id: order.id },
+            data: { status: 'cancelled' }
+        })
+
+        req.io?.emit('ORDER_STATUS_UPDATE', { orderId: order.id, status: 'cancelled' })
+        req.io?.to(`order:${order.id}`).emit('ORDER_STATUS_UPDATE', { orderId: order.id, status: 'cancelled' })
+
+        res.json({ message: 'Order cancelled successfully', order: updatedOrder })
+    } catch (err) {
+        console.error('Cancel order error:', err)
+        res.status(500).json({ message: 'Server error' })
+    }
+})
+
 // POST /api/orders/:id/assign-delivery — Delivery partner accepts an order
 router.post('/:id/assign-delivery', authenticate, requireRole('delivery_partner'), async (req, res) => {
     try {

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCartStore } from '../store/cartStore'
+import confetti from 'canvas-confetti'
 
 const VALID_COUPONS = {
     'FOODRUSH': { discount: 0.10, label: '10% OFF', max: 100 },
@@ -28,6 +29,14 @@ export default function Cart() {
         if (!found) { setCouponError('Invalid coupon code'); setAppliedCoupon(null); return }
         setAppliedCoupon({ code, ...found })
         setCouponError('')
+
+        // Gamification: Trigger confetti!
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#f97316', '#22c55e', '#ffffff'] // Brand orange, green, white
+        })
     }
 
     const removeCoupon = () => { setAppliedCoupon(null); setCoupon(''); setCouponError('') }

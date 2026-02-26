@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useCartStore } from '../store/cartStore'
 import { useAuthStore } from '../store/authStore'
 import api from '../lib/api'
+import confetti from 'canvas-confetti'
 
 export default function Checkout() {
     const navigate = useNavigate()
@@ -10,6 +11,7 @@ export default function Checkout() {
     const { user } = useAuthStore()
 
     const [address, setAddress] = useState(user?.address || '')
+    const [savedAddresses, setSavedAddresses] = useState([])
     const [phone, setPhone] = useState(user?.phone || '')
     const [instructions, setInstructions] = useState('')
     const [cookingInstructions, setCookingInstructions] = useState('')
@@ -40,6 +42,20 @@ export default function Checkout() {
         if (items.length === 0) navigate('/cart')
     }, [items, navigate])
 
+    // Load saved addresses
+    useEffect(() => {
+        api.get('/api/addresses')
+            .then(res => {
+                setSavedAddresses(res.data)
+                const defaultAddr = res.data.find(a => a.isDefault) || res.data[0]
+                if (defaultAddr && !address) {
+                    const formatted = [defaultAddr.street, defaultAddr.city, defaultAddr.state, defaultAddr.zip].filter(Boolean).join(', ')
+                    setAddress(formatted)
+                }
+            })
+            .catch(() => { })
+    }, [])
+
     // Load Razorpay script
     useEffect(() => {
         const script = document.createElement('script')
@@ -55,6 +71,14 @@ export default function Checkout() {
         try {
             const { data } = await api.post('/api/orders/validate-promo', { code: promoCode, restaurantId })
             setAppliedPromo(data)
+
+            // Gamification: Trigger confetti!
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#f97316', '#22c55e', '#ffffff'] // Brand orange, green, white
+            })
         } catch (err) {
             setPromoError(err.response?.data?.message || 'Invalid promo code')
         }
@@ -137,6 +161,25 @@ export default function Checkout() {
                 {/* Delivery Address */}
                 <div className="card space-y-3">
                     <h2 className="font-semibold flex items-center gap-2">📍 Delivery Address</h2>
+
+                    {savedAddresses.length > 0 && (
+                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                            {savedAddresses.map(a => {
+                                const formatted = [a.street, a.city, a.state, a.zip].filter(Boolean).join(', ')
+                                return (
+                                    <button
+                                        key={a.id}
+                                        onClick={() => setAddress(formatted)}
+                                        className={`shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-xl border text-sm transition-colors ${address === formatted ? 'bg-brand-500/10 border-brand-500 text-brand-500' : 'border-white/10 text-gray-400 hover:border-white/30'}`}
+                                    >
+                                        <span>{a.type === 'home' ? '🏠' : a.type === 'work' ? '🏢' : '📍'}</span>
+                                        <span className="capitalize font-medium">{a.type}</span>
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    )}
+
                     <textarea
                         id="delivery-address"
                         className="input resize-none h-20"

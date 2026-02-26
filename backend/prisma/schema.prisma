@@ -30,6 +30,7 @@ model User {
   reviews        Review[]
   notifications  Notification[]
   favorites      Favorite[]
+  addresses      Address[]
 
   @@map("users")
 }
@@ -75,6 +76,23 @@ model Favorite {
 
   @@unique([userId, restaurantId])
   @@map("favorites")
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String   @default("home") // home, work, other
+  street    String
+  city      String
+  state     String?
+  zip       String?
+  lat       Float?
+  lng       Float?
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  @@map("addresses")
 }
 
 model MenuItem {

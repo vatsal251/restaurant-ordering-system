@@ -15,6 +15,7 @@ import orderRoutes from './routes/orders.js'
 import sealRoutes from './routes/seal.js'
 import searchRoutes from './routes/search.js'
 import surpriseRoutes from './routes/surprise.js'
+import addressRoutes from './routes/addresses.js'
 import { setupSocketHandlers } from './sockets/index.js'
 
 const app = express()
@@ -62,6 +63,7 @@ app.use('/api/orders', orderRoutes)
 app.use('/api/delivery', deliveryRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/seal', sealRoutes)
+app.use('/api/addresses', addressRoutes)
 app.use('/api/search', searchRoutes)
 app.use('/api/surprise', surpriseRoutes)
 

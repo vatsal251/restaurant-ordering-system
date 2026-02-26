@@ -215,7 +215,17 @@ router.get('/:id', async (req, res) => {
     try {
         const restaurant = await prisma.restaurant.findUnique({
             where: { id: req.params.id },
-            select: { id: true, name: true, cuisineType: true, rating: true, isOpen: true, isApproved: true, imageUrl: true, address: true }
+            select: {
+                id: true, name: true, cuisineType: true, rating: true, isOpen: true, isApproved: true, imageUrl: true, address: true,
+                reviews: {
+                    take: 5,
+                    orderBy: { createdAt: 'desc' },
+                    select: {
+                        id: true, rating: true, comment: true, createdAt: true,
+                        customer: { select: { name: true } }
+                    }
+                }
+            }
         })
         if (!restaurant || !restaurant.isApproved) return res.status(404).json({ message: 'Restaurant not found or is suspended' })
         res.json(restaurant)

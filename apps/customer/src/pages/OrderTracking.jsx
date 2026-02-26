@@ -48,6 +48,7 @@ export default function OrderTracking() {
     const [order, setOrder] = useState(null)
     const [loading, setLoading] = useState(true)
     const [partnerLoc, setPartnerLoc] = useState(null)
+    const [cancelling, setCancelling] = useState(false)
 
     useEffect(() => {
         api.get(`/api/orders/${orderId}`)
@@ -74,6 +75,19 @@ export default function OrderTracking() {
     const isCancelled = order.status === 'cancelled'
     const isDelivered = order.status === 'delivered'
 
+    const handleCancelOrder = async () => {
+        if (!window.confirm('Are you sure you want to cancel this order?')) return
+        setCancelling(true)
+        try {
+            const { data } = await api.post(`/api/orders/${orderId}/cancel`)
+            setOrder(data.order)
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to cancel order')
+        } finally {
+            setCancelling(false)
+        }
+    }
+
     return (
         <div className="min-h-screen pb-10">
             {/* Header */}
@@ -97,6 +111,15 @@ export default function OrderTracking() {
                     <p className="text-gray-400 text-sm mt-1">{STATUS_DESC[order.status]}</p>
                     {order.deliveryPartner && (
                         <p className="text-xs text-gray-500 mt-2">🚴 {order.deliveryPartner.name} · {order.deliveryPartner.phone}</p>
+                    )}
+                    {order.status === 'placed' && (
+                        <button
+                            onClick={handleCancelOrder}
+                            disabled={cancelling}
+                            className="mt-4 text-xs font-semibold text-red-400 border border-red-500/30 rounded-full px-4 py-1.5 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                        >
+                            {cancelling ? 'Cancelling...' : 'Cancel Order'}
+                        </button>
                     )}
                 </div>
 
