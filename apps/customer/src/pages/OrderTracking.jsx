@@ -177,6 +177,32 @@ export default function OrderTracking() {
                     </div>
                 </div>
 
+                {/* Seal Photos Timeline */}
+                {(order.sealVerification?.dispatchPhotoUrl || order.sealVerification?.pickupPhotoUrl) && (
+                    <div className="card space-y-3">
+                        <h3 className="font-semibold text-sm flex items-center gap-2">📸 View Sealed Photos</h3>
+                        <p className="text-xs text-gray-400">Rest assured your food is safe and untampered.</p>
+                        <div className="grid grid-cols-2 gap-3 mt-2">
+                            {order.sealVerification.dispatchPhotoUrl && (
+                                <div className="space-y-1">
+                                    <div className="aspect-square rounded-xl overflow-hidden border border-white/10 bg-black/50">
+                                        <img src={order.sealVerification.dispatchPhotoUrl} alt="Dispatch Seal" className="w-full h-full object-cover" />
+                                    </div>
+                                    <p className="text-[10px] text-center text-gray-500 font-medium">By Restaurant</p>
+                                </div>
+                            )}
+                            {order.sealVerification.pickupPhotoUrl && (
+                                <div className="space-y-1">
+                                    <div className="aspect-square rounded-xl overflow-hidden border border-white/10 bg-black/50">
+                                        <img src={order.sealVerification.pickupPhotoUrl} alt="Pickup Seal" className="w-full h-full object-cover" />
+                                    </div>
+                                    <p className="text-[10px] text-center text-gray-500 font-medium">By Delivery Partner</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {/* Seal verification prompt — show when delivered */}
                 {isDelivered && !order.sealVerification?.customerVerdict && (
                     <div className="card border border-brand-500/30 bg-brand-500/5 space-y-3">

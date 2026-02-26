@@ -16,8 +16,11 @@ export default function Cart() {
     const [couponError, setCouponError] = useState('')
 
     const subtotal = totalPrice()
-    const deliveryFee = items.length > 0 ? 40 : 0
+    // Free delivery above ₹299
+    const deliveryFee = (items.length > 0 && subtotal < 299) ? 40 : 0
     const taxes = Math.round(subtotal * 0.05)
+    const amountForFreeDelivery = Math.max(0, 299 - subtotal)
+    const freeDeliveryProgress = Math.min(100, (subtotal / 299) * 100)
 
     const applyCoupon = () => {
         const code = coupon.trim().toUpperCase()
@@ -59,27 +62,48 @@ export default function Cart() {
                 </div>
             </div>
 
-            <div className="px-4 pt-4 space-y-3">
-                {/* Items */}
-                {items.map(item => (
-                    <div key={item.id} id={`cart-item-${item.id}`} className="card flex items-center gap-4">
-                        <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{item.name}</p>
-                            <p className="text-brand-500 text-sm font-semibold">₹{item.price} × {item.quantity} = ₹{(item.price * item.quantity).toFixed(0)}</p>
+            <div className="px-4 pt-4 space-y-4">
+                {/* Free Delivery Progress */}
+                <div className="card bg-gradient-to-r from-brand-500/10 to-transparent border-brand-500/20 p-4">
+                    <div className="flex justify-between items-end mb-2">
+                        <div>
+                            <h3 className="font-bold text-sm text-brand-400">
+                                {amountForFreeDelivery > 0 ? `Add ₹${amountForFreeDelivery.toFixed(0)} more for Free Delivery` : '🎉 You unlocked Free Delivery!'}
+                            </h3>
+                            <p className="text-xs text-gray-400 mt-0.5">Orders above ₹299 get free delivery</p>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                            <button id={`dec-${item.id}`} onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                className="w-8 h-8 rounded-full bg-white/10 hover:bg-brand-500 flex items-center justify-center font-bold transition-colors">−</button>
-                            <span className="w-5 text-center font-semibold">{item.quantity}</span>
-                            <button id={`inc-${item.id}`} onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                className="w-8 h-8 rounded-full bg-white/10 hover:bg-brand-500 flex items-center justify-center font-bold transition-colors">+</button>
-                        </div>
-                        <button id={`remove-${item.id}`} onClick={() => removeItem(item.id)}
-                            className="text-red-400 hover:text-red-300 text-lg ml-1">🗑️</button>
+                        <span className="text-2xl">{amountForFreeDelivery > 0 ? '🛵' : '✨'}</span>
                     </div>
-                ))}
+                    <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                        <div
+                            className="bg-brand-500 h-full rounded-full transition-all duration-500 ease-out"
+                            style={{ width: `${freeDeliveryProgress}%` }}
+                        />
+                    </div>
+                </div>
 
-                <Link to="/" className="flex items-center gap-2 text-brand-500 text-sm py-2 hover:underline">
+                {/* Items */}
+                <div className="card p-0 overflow-hidden divide-y divide-white/5">
+                    {items.map(item => (
+                        <div key={item.id} id={`cart-item-${item.id}`} className="card flex items-center gap-4">
+                            <div className="flex-1 min-w-0">
+                                <p className="font-medium truncate">{item.name}</p>
+                                <p className="text-brand-500 text-sm font-semibold">₹{item.price} × {item.quantity} = ₹{(item.price * item.quantity).toFixed(0)}</p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                                <button id={`dec-${item.id}`} onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                    className="w-8 h-8 rounded-full bg-white/10 hover:bg-brand-500 flex items-center justify-center font-bold transition-colors">−</button>
+                                <span className="w-5 text-center font-semibold">{item.quantity}</span>
+                                <button id={`inc-${item.id}`} onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                    className="w-8 h-8 rounded-full bg-white/10 hover:bg-brand-500 flex items-center justify-center font-bold transition-colors">+</button>
+                            </div>
+                            <button id={`remove-${item.id}`} onClick={() => removeItem(item.id)}
+                                className="text-red-400 hover:text-red-300 text-lg ml-1">🗑️</button>
+                        </div>
+                    ))}
+                </div>
+
+                <Link to="/" className="flex items-center justify-center gap-2 text-brand-500 text-sm py-3 bg-brand-500/5 rounded-xl border border-brand-500/20 hover:bg-brand-500/10 transition-colors font-medium">
                     + Add more items
                 </Link>
 
@@ -145,8 +169,10 @@ export default function Cart() {
                     </div>
                 </div>
 
-                <button id="clear-cart-btn" onClick={() => { clearCart(); navigate('/') }}
-                    className="text-sm text-red-400 hover:text-red-300 py-1">Clear cart</button>
+                <div className="text-center pt-2">
+                    <button id="clear-cart-btn" onClick={() => { clearCart(); navigate('/') }}
+                        className="text-sm text-red-400 hover:text-red-300 py-1 transition-colors">🗑️ Clear entire cart</button>
+                </div>
             </div>
 
             {/* Fixed bottom checkout button */}

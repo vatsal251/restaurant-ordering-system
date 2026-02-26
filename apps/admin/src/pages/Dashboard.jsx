@@ -11,7 +11,17 @@ export default function AdminDashboard() {
     const [orders, setOrders] = useState([])
     const [disputes, setDisputes] = useState([])
     const [sealAudits, setSealAudits] = useState([])
+    const [restaurants, setRestaurants] = useState([])
+    const [promos, setPromos] = useState([])
     const [loading, setLoading] = useState(true)
+
+    // Promo form state
+    const [promoCode, setPromoCode] = useState('')
+    const [promoDiscount, setPromoDiscount] = useState('')
+    const [promoType, setPromoType] = useState('percentage')
+    const [promoValidDays, setPromoValidDays] = useState('7')
+    const [promoMaxUses, setPromoMaxUses] = useState('')
+    const [creatingPromo, setCreatingPromo] = useState(false)
 
     useEffect(() => {
         Promise.all([
@@ -20,12 +30,16 @@ export default function AdminDashboard() {
             api.get('/api/admin/orders').catch(() => ({ data: [] })),
             api.get('/api/admin/disputes').catch(() => ({ data: [] })),
             api.get('/api/admin/seal-audits').catch(() => ({ data: [] })),
-        ]).then(([s, u, o, d, sa]) => {
+            api.get('/api/admin/restaurants').catch(() => ({ data: [] })),
+            api.get('/api/admin/promos').catch(() => ({ data: [] })),
+        ]).then(([s, u, o, d, sa, r, p]) => {
             setStats(s.data)
             setUsers(u.data)
             setOrders(o.data)
             setDisputes(d.data)
             setSealAudits(sa.data)
+            setRestaurants(r.data)
+            setPromos(p.data)
         }).finally(() => setLoading(false))
     }, [])
 
@@ -36,6 +50,13 @@ export default function AdminDashboard() {
         } catch { alert('Action failed') }
     }
 
+    const toggleRestaurantApproval = async (id, isApproved) => {
+        try {
+            await api.patch(`/api/admin/restaurants/${id}/approve`, { isApproved: !isApproved })
+            setRestaurants(r => r.map(rest => rest.id === id ? { ...rest, isApproved: !isApproved } : rest))
+        } catch { alert('Failed to update restaurant status') }
+    }
+
     const resolveDispute = async (orderId, notes) => {
         try {
             await api.patch(`/api/admin/disputes/${orderId}/resolve`, { adminNotes: notes, resolvedByAdmin: true })
@@ -43,9 +64,45 @@ export default function AdminDashboard() {
         } catch { alert('Failed to resolve') }
     }
 
+    const handleCreatePromo = async (e) => {
+        e.preventDefault()
+        if (!promoCode.trim() || !promoDiscount) return alert('Code and discount are required')
+        setCreatingPromo(true)
+        try {
+            const validTo = new Date()
+            validTo.setDate(validTo.getDate() + parseInt(promoValidDays))
+
+            const res = await api.post('/api/admin/promos', {
+                code: promoCode,
+                discount: promoDiscount,
+                type: promoType,
+                validTo: validTo.toISOString(),
+                maxUses: promoMaxUses ? parseInt(promoMaxUses) : null,
+            })
+            setPromos([...promos, res.data])
+            setPromoCode(''); setPromoDiscount(''); setPromoMaxUses('');
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to create promo code')
+        } finally {
+            setCreatingPromo(false)
+        }
+    }
+
+    const handleDeletePromo = async (id) => {
+        if (!confirm('Delete this global promo code?')) return
+        try {
+            await api.delete(`/api/admin/promos/${id}`)
+            setPromos(p => p.filter(code => code.id !== id))
+        } catch {
+            alert('Failed to delete promo')
+        }
+    }
+
     const TABS = [
         { id: 'overview', label: '📊 Overview' },
+        { id: 'promos', label: '🎟️ Global Promos' },
         { id: 'users', label: '👥 Users' },
+        { id: 'restaurants', label: '🍽️ Restaurants' },
         { id: 'orders', label: '📋 Orders' },
         { id: 'seal', label: '🔒 Seal Audit' },
         { id: 'disputes', label: '⚖️ Disputes' },
@@ -117,6 +174,69 @@ export default function AdminDashboard() {
                         )}
 
 
+                        {/* ─── GLOBAL PROMOS ─── */}
+                        {tab === 'promos' && (
+                            <div className="space-y-6">
+                                <form onSubmit={handleCreatePromo} className="card space-y-4 border border-brand-500/20 bg-brand-500/5">
+                                    <h2 className="font-semibold flex items-center gap-2">🎟️ Create Global Promo Code</h2>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="space-y-1">
+                                            <label className="text-xs text-gray-400 uppercase tracking-wide">Code</label>
+                                            <input className="input uppercase font-mono" placeholder="FOODRUSH" value={promoCode} onChange={e => setPromoCode(e.target.value.toUpperCase())} required />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs text-gray-400 uppercase tracking-wide">Type</label>
+                                            <select className="input" value={promoType} onChange={e => setPromoType(e.target.value)}>
+                                                <option value="percentage">% Percentage</option>
+                                                <option value="flat">₹ Flat Amount</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div className="space-y-1">
+                                            <label className="text-xs text-gray-400 uppercase tracking-wide">Discount</label>
+                                            <input type="number" step="0.01" min="0" className="input" value={promoDiscount} onChange={e => setPromoDiscount(e.target.value)} required />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs text-gray-400 uppercase tracking-wide">Valid Days</label>
+                                            <input type="number" min="1" className="input" value={promoValidDays} onChange={e => setPromoValidDays(e.target.value)} required />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs text-gray-400 uppercase tracking-wide">Max Uses</label>
+                                            <input type="number" min="1" className="input" placeholder="∞" value={promoMaxUses} onChange={e => setPromoMaxUses(e.target.value)} />
+                                        </div>
+                                    </div>
+                                    <button type="submit" disabled={creatingPromo} className="btn-primary w-full py-2">
+                                        {creatingPromo ? 'Creating...' : 'Create Promo Code'}
+                                    </button>
+                                </form>
+
+                                <div className="space-y-3">
+                                    <h2 className="font-semibold text-gray-400 uppercase tracking-wide text-sm">Active Promotions</h2>
+                                    {promos.length === 0 ? (
+                                        <p className="text-gray-500 text-center py-5">No global promos yet</p>
+                                    ) : (
+                                        promos.map(p => {
+                                            const active = new Date(p.validTo) > new Date() && (!p.maxUses || p.usedCount < p.maxUses)
+                                            return (
+                                                <div key={p.id} className={`card flex items-center justify-between ${active ? 'border-l-4 border-l-brand-500' : 'opacity-60'}`}>
+                                                    <div>
+                                                        <div className="flex items-center gap-2">
+                                                            <h3 className="font-bold text-lg font-mono tracking-wider text-white">{p.code}</h3>
+                                                            {!active && <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded font-bold uppercase">Inactive</span>}
+                                                        </div>
+                                                        <p className="text-brand-400 font-semibold text-sm">{p.type === 'percentage' ? `${p.discount}% OFF` : `₹${p.discount} OFF`}</p>
+                                                        <p className="text-xs text-gray-500 mt-1">Used {p.usedCount} {p.maxUses ? `/ ${p.maxUses}` : 'times'} · Expires {new Date(p.validTo).toLocaleDateString()}</p>
+                                                    </div>
+                                                    <button onClick={() => handleDeletePromo(p.id)} className="text-gray-400 hover:text-red-400 px-3 py-2 bg-white/5 rounded-lg transition-colors">🗑️</button>
+                                                </div>
+                                            )
+                                        })
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         {/* ─── USERS ─── */}
                         {tab === 'users' && (
                             <div className="space-y-3">
@@ -148,6 +268,38 @@ export default function AdminDashboard() {
                                     </div>
                                 ))}
                                 {users.length === 0 && <p className="text-gray-500 text-center py-10">No users yet</p>}
+                            </div>
+                        )}
+
+                        {/* ─── RESTAURANTS ─── */}
+                        {tab === 'restaurants' && (
+                            <div className="space-y-3">
+                                <h2 className="font-semibold">All Restaurants ({restaurants.length})</h2>
+                                {restaurants.map(r => (
+                                    <div key={r.id} className="card flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center font-bold text-orange-500 flex-shrink-0">
+                                                {r.name?.[0]?.toUpperCase()}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="font-medium truncate">{r.name}</p>
+                                                <p className="text-xs text-gray-400 truncate">Owner: {r.owner?.name}</p>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    <span className="text-xs bg-white/5 text-gray-400 px-2 py-0.5 rounded-full">{r.cuisineType || 'No cuisine'}</span>
+                                                    {!r.isApproved && <span className="text-xs bg-red-500/10 text-red-400 px-2 py-0.5 rounded-full">Suspended</span>}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => toggleRestaurantApproval(r.id, r.isApproved)}
+                                            className={`text-xs px-3 py-1.5 rounded-lg border transition-colors flex-shrink-0 ${r.isApproved
+                                                ? 'border-red-500/30 text-red-400 hover:bg-red-500/10'
+                                                : 'border-green-500/30 text-green-400 hover:bg-green-500/10'
+                                                }`}
+                                        >{r.isApproved ? 'Suspend' : 'Approve'}</button>
+                                    </div>
+                                ))}
+                                {restaurants.length === 0 && <p className="text-gray-500 text-center py-10">No restaurants found</p>}
                             </div>
                         )}
 
@@ -249,9 +401,10 @@ export default function AdminDashboard() {
                             </div>
                         )}
                     </>
-                )}
-            </div>
-        </div>
+                )
+                }
+            </div >
+        </div >
     )
 }
 

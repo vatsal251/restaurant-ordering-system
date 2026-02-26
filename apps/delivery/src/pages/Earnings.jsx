@@ -5,26 +5,29 @@ import api from '../lib/api'
 
 export default function Earnings() {
     const { user, logout } = useAuthStore()
-    const [orders, setOrders] = useState([])
+    const [earnings, setEarnings] = useState({ balance: 0, history: [] })
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        api.get('/api/orders')
-            .then(r => setOrders(r.data.filter(o => o.deliveryPartnerId === user?.id)))
-            .catch(() => setOrders([]))
+        api.get('/api/delivery/earnings')
+            .then(r => setEarnings(r.data))
+            .catch(() => { })
             .finally(() => setLoading(false))
-    }, [user])
+    }, [])
 
-    const delivered = orders.filter(o => o.status === 'delivered')
-    const todayDelivered = delivered.filter(o => {
+    const PER_DELIVERY = 40
+
+    // Filter today's history
+    const todayHistory = earnings.history?.filter(o => {
         const d = new Date(o.updatedAt)
         const today = new Date()
         return d.toDateString() === today.toDateString()
-    })
+    }) || []
 
-    const PER_DELIVERY = 40
-    const totalEarnings = delivered.length * PER_DELIVERY
-    const todayEarnings = todayDelivered.length * PER_DELIVERY
+    // Sum today's total (base fee + tips)
+    const todayEarnings = todayHistory.reduce((sum, o) => {
+        return sum + PER_DELIVERY + (o.tipAmount || 0)
+    }, 0)
 
     return (
         <div className="min-h-screen pb-10">
@@ -52,12 +55,12 @@ export default function Earnings() {
                     <div className="card text-center p-4 border border-brand-500/20">
                         <p className="text-3xl font-bold text-brand-500">₹{todayEarnings}</p>
                         <p className="text-xs text-gray-400 mt-1">Today's Earnings</p>
-                        <p className="text-xs text-gray-600 mt-0.5">{todayDelivered.length} deliveries</p>
+                        <p className="text-xs text-gray-600 mt-0.5">{todayHistory.length} deliveries</p>
                     </div>
                     <div className="card text-center p-4">
-                        <p className="text-3xl font-bold text-green-400">₹{totalEarnings}</p>
-                        <p className="text-xs text-gray-400 mt-1">Total Earnings</p>
-                        <p className="text-xs text-gray-600 mt-0.5">{delivered.length} deliveries</p>
+                        <p className="text-3xl font-bold text-green-400">₹{earnings.balance}</p>
+                        <p className="text-xs text-gray-400 mt-1">Available Balance</p>
+                        <p className="text-xs text-brand-500 font-bold mt-1 bg-brand-500/10 rounded-full px-2 py-1 w-max mx-auto shadow-sm shadow-brand-500/10 text-[10px] uppercase">Ready to withdraw</p>
                     </div>
                 </div>
 
@@ -75,17 +78,20 @@ export default function Earnings() {
                     <h3 className="font-semibold text-sm text-gray-400 uppercase tracking-wide">Delivery History</h3>
                     {loading ? (
                         <div className="space-y-2">{[1, 2, 3].map(i => <div key={i} className="animate-pulse h-12 bg-white/5 rounded-xl" />)}</div>
-                    ) : delivered.length === 0 ? (
+                    ) : earnings.history?.length === 0 ? (
                         <p className="text-gray-500 text-sm text-center py-4">No deliveries yet. Accept orders to start earning!</p>
                     ) : (
-                        delivered.slice(0, 10).map(o => (
-                            <div key={o.id} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
+                        earnings.history?.slice(0, 15).map(o => (
+                            <div key={o.id} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0 relative">
                                 <div>
                                     <p className="font-medium text-sm">#{o.id.slice(-6).toUpperCase()}</p>
                                     <p className="text-xs text-gray-500">{o.restaurant?.name} → {o.customer?.name}</p>
                                     <p className="text-xs text-gray-600">{new Date(o.updatedAt).toLocaleDateString()}</p>
                                 </div>
-                                <p className="text-green-400 font-bold">+₹{PER_DELIVERY}</p>
+                                <div className="text-right">
+                                    <p className="text-green-400 font-bold">+₹{PER_DELIVERY + (o.tipAmount || 0)}</p>
+                                    {o.tipAmount > 0 && <span className="text-[10px] bg-brand-500/20 text-brand-400 px-1.5 py-0.5 rounded uppercase font-bold mt-1 inline-block">+ {o.tipAmount} Tip!</span>}
+                                </div>
                             </div>
                         ))
                     )}

@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard'
 import Menu from './pages/Menu'
 import SealDispatch from './pages/SealDispatch'
 import Analytics from './pages/Analytics'
+import Promotions from './pages/Promotions'
 import Profile from './pages/Profile'
 import { Orders, OrderDetail } from './pages/Stubs'
 
@@ -27,6 +28,7 @@ export default function App() {
                 <Route path="/orders/:id/seal-dispatch" element={<ProtectedRoute><SealDispatch /></ProtectedRoute>} />
                 <Route path="/menu" element={<ProtectedRoute><Menu /></ProtectedRoute>} />
                 <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+                <Route path="/promotions" element={<ProtectedRoute><Promotions /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

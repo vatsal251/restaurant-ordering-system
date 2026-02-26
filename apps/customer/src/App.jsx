@@ -19,6 +19,11 @@ import SealVerify from './pages/SealVerify'
 // Phase 5 — Polish pages
 import Profile from './pages/Profile'
 
+// Phase 7 — Advanced Parity
+import Search from './pages/Search'
+import Favourites from './pages/Favourites'
+import SurpriseMe from './pages/SurpriseMe'
+
 const ProtectedRoute = ({ children }) => {
     const token = useAuthStore(s => s.token)
     return token ? children : <Navigate to="/login" replace />
@@ -34,13 +39,16 @@ export default function App() {
 
                 {/* Customer pages */}
                 <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
                 <Route path="/restaurant/:id" element={<ProtectedRoute><RestaurantPage /></ProtectedRoute>} />
                 <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
                 <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
                 <Route path="/orders" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
                 <Route path="/orders/:id" element={<ProtectedRoute><OrderTracking /></ProtectedRoute>} />
                 <Route path="/orders/:id/seal" element={<ProtectedRoute><SealVerify /></ProtectedRoute>} />
+                <Route path="/favourites" element={<ProtectedRoute><Favourites /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/surprise" element={<ProtectedRoute><SurpriseMe /></ProtectedRoute>} />
 
                 {/* Fallback */}
                 <Route path="*" element={<Navigate to="/" replace />} />

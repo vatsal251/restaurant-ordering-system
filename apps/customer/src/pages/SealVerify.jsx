@@ -34,9 +34,25 @@ export default function SealVerify() {
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
             streamRef.current = stream
             if (videoRef.current) videoRef.current.srcObject = stream
-        } catch {
-            alert('Camera access denied. Please allow camera permission.')
+        } catch (err) {
+            console.warn('Camera access denied or failed. Fallback to file upload.', err)
         }
+    }
+
+    const handleFileUpload = (e) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        const reader = new FileReader()
+        reader.onload = (event) => {
+            const dataUrl = event.target.result
+            setPreview(dataUrl)
+            setCustomerPhoto(dataUrl)
+            // Stop camera if it happened to be running
+            streamRef.current?.getTracks().forEach(t => t.stop())
+            setStep('compare')
+        }
+        reader.readAsDataURL(file)
     }
 
     const capturePhoto = () => {
@@ -116,12 +132,30 @@ export default function SealVerify() {
                     </div>
                 </div>
                 <canvas ref={canvasRef} className="hidden" />
-                <div className="p-6 bg-black flex justify-center">
+                <div className="p-6 bg-black flex flex-col items-center gap-4">
                     <button
                         id="capture-btn"
                         onClick={capturePhoto}
-                        className="w-20 h-20 rounded-full bg-white border-4 border-brand-500 active:scale-95 transition-transform"
+                        disabled={!streamRef.current?.active}
+                        className="w-20 h-20 rounded-full bg-white border-4 border-brand-500 active:scale-95 transition-transform disabled:opacity-50"
                     />
+
+                    {/* Fallback File Upload */}
+                    <div className="text-center">
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileUpload}
+                            className="hidden"
+                            id="seal-upload"
+                        />
+                        <label
+                            htmlFor="seal-upload"
+                            className="text-gray-400 text-sm cursor-pointer underline hover:text-white"
+                        >
+                            Or upload a photo from gallery
+                        </label>
+                    </div>
                 </div>
             </div>
         )

@@ -25,7 +25,7 @@ router.get('/me/menu', authenticate, requireRole('restaurant_owner'), async (req
     try {
         const r = await getOwnerRestaurant(req.user.id)
         const items = await prisma.menuItem.findMany({
-            where: { restaurantId: r.id },
+            where: { restaurantId: r.id, isArchived: false },
             orderBy: [{ category: 'asc' }, { name: 'asc' }],
         })
         res.json(items)
@@ -36,7 +36,7 @@ router.get('/me/menu', authenticate, requireRole('restaurant_owner'), async (req
 router.post('/me/menu', authenticate, requireRole('restaurant_owner'), async (req, res) => {
     try {
         const r = await getOwnerRestaurant(req.user.id)
-        const { name, description, price, category, isAvailable } = req.body
+        const { name, description, price, category, isAvailable, isVeg } = req.body
         if (!name || !price) return res.status(400).json({ message: 'Name and price are required' })
         const item = await prisma.menuItem.create({
             data: {
@@ -45,7 +45,8 @@ router.post('/me/menu', authenticate, requireRole('restaurant_owner'), async (re
                 description,
                 price: parseFloat(price),
                 category: category || null,
-                isAvailable: isAvailable ?? true
+                isAvailable: isAvailable ?? true,
+                isVeg: isVeg ?? true
             }
         })
         res.status(201).json(item)
@@ -56,12 +57,12 @@ router.post('/me/menu', authenticate, requireRole('restaurant_owner'), async (re
 router.put('/me/menu/:itemId', authenticate, requireRole('restaurant_owner'), async (req, res) => {
     try {
         const r = await getOwnerRestaurant(req.user.id)
-        const { name, description, price, category, isAvailable } = req.body
-        const existing = await prisma.menuItem.findFirst({ where: { id: req.params.itemId, restaurantId: r.id } })
+        const { name, description, price, category, isAvailable, isVeg } = req.body
+        const existing = await prisma.menuItem.findFirst({ where: { id: req.params.itemId, restaurantId: r.id, isArchived: false } })
         if (!existing) return res.status(404).json({ message: 'Item not found' })
         const item = await prisma.menuItem.update({
             where: { id: req.params.itemId },
-            data: { name, description, price: parseFloat(price), category: category || null, isAvailable }
+            data: { name, description, price: parseFloat(price), category: category || null, isAvailable, isVeg }
         })
         res.json(item)
     } catch (err) { res.status(err.status || 500).json({ message: err.message }) }
@@ -71,11 +72,21 @@ router.put('/me/menu/:itemId', authenticate, requireRole('restaurant_owner'), as
 router.delete('/me/menu/:itemId', authenticate, requireRole('restaurant_owner'), async (req, res) => {
     try {
         const r = await getOwnerRestaurant(req.user.id)
-        const existing = await prisma.menuItem.findFirst({ where: { id: req.params.itemId, restaurantId: r.id } })
+        const existing = await prisma.menuItem.findFirst({ where: { id: req.params.itemId, restaurantId: r.id, isArchived: false } })
         if (!existing) return res.status(404).json({ message: 'Item not found' })
         await prisma.menuItem.delete({ where: { id: req.params.itemId } })
         res.json({ message: 'Deleted' })
-    } catch (err) { res.status(err.status || 500).json({ message: err.message }) }
+    } catch (err) {
+        if (err.code === 'P2003') {
+            // Soft delete
+            await prisma.menuItem.update({
+                where: { id: req.params.itemId },
+                data: { isArchived: true, isAvailable: false }
+            })
+            return res.json({ message: 'Item archived because it has past orders.' })
+        }
+        res.status(err.status || 500).json({ message: err.message })
+    }
 })
 
 // GET /api/restaurants/me/profile
@@ -99,6 +110,64 @@ router.patch('/me/profile', authenticate, requireRole('restaurant_owner'), async
         })
         res.json(r)
     } catch (err) { res.status(500).json({ message: err.message }) }
+})
+
+// GET /api/restaurants/me/analytics
+router.get('/me/analytics', authenticate, requireRole('restaurant_owner'), async (req, res) => {
+    try {
+        const r = await getOwnerRestaurant(req.user.id)
+
+        const totalOrders = await prisma.order.count({ where: { restaurantId: r.id } })
+        const revenueAgg = await prisma.order.aggregate({
+            where: { restaurantId: r.id, status: 'delivered' },
+            _sum: { totalAmount: true }
+        })
+        const totalRevenue = revenueAgg._sum.totalAmount || 0
+
+        res.json({ totalOrders, totalRevenue })
+    } catch (err) { res.status(err.status || 500).json({ message: err.message }) }
+})
+
+// GET /api/restaurants/me/promos
+router.get('/me/promos', authenticate, requireRole('restaurant_owner'), async (req, res) => {
+    try {
+        const r = await getOwnerRestaurant(req.user.id)
+        const promos = await prisma.promoCode.findMany({ where: { restaurantId: r.id }, orderBy: { createdAt: 'desc' } })
+        res.json(promos)
+    } catch (err) { res.status(err.status || 500).json({ message: err.message }) }
+})
+
+// POST /api/restaurants/me/promos
+router.post('/me/promos', authenticate, requireRole('restaurant_owner'), async (req, res) => {
+    try {
+        const r = await getOwnerRestaurant(req.user.id)
+        const { code, discount, type, validTo, maxUses } = req.body
+        const promo = await prisma.promoCode.create({
+            data: {
+                code: code.toUpperCase(),
+                discount: parseFloat(discount),
+                type: type || 'percentage',
+                validTo: new Date(validTo),
+                maxUses: maxUses ? parseInt(maxUses) : null,
+                restaurantId: r.id
+            }
+        })
+        res.status(201).json(promo)
+    } catch (err) {
+        if (err.code === 'P2002') return res.status(400).json({ message: 'Promo code already exists' })
+        res.status(err.status || 500).json({ message: err.message })
+    }
+})
+
+// DELETE /api/restaurants/me/promos/:id
+router.delete('/me/promos/:id', authenticate, requireRole('restaurant_owner'), async (req, res) => {
+    try {
+        const r = await getOwnerRestaurant(req.user.id)
+        const existing = await prisma.promoCode.findFirst({ where: { id: req.params.id, restaurantId: r.id } })
+        if (!existing) return res.status(404).json({ message: 'Promo not found' })
+        await prisma.promoCode.delete({ where: { id: req.params.id } })
+        res.json({ message: 'Deleted' })
+    } catch (err) { res.status(err.status || 500).json({ message: err.message }) }
 })
 
 // GET /api/restaurants/me/orders
@@ -128,6 +197,7 @@ router.get('/', async (req, res) => {
         const { cuisine, search } = req.query
         const restaurants = await prisma.restaurant.findMany({
             where: {
+                isApproved: true,
                 ...(cuisine && cuisine !== 'All' && { cuisineType: cuisine }),
                 ...(search && { name: { contains: search, mode: 'insensitive' } }),
             },
@@ -145,9 +215,9 @@ router.get('/:id', async (req, res) => {
     try {
         const restaurant = await prisma.restaurant.findUnique({
             where: { id: req.params.id },
-            select: { id: true, name: true, cuisineType: true, rating: true, isOpen: true, imageUrl: true, address: true }
+            select: { id: true, name: true, cuisineType: true, rating: true, isOpen: true, isApproved: true, imageUrl: true, address: true }
         })
-        if (!restaurant) return res.status(404).json({ message: 'Restaurant not found' })
+        if (!restaurant || !restaurant.isApproved) return res.status(404).json({ message: 'Restaurant not found or is suspended' })
         res.json(restaurant)
     } catch (err) {
         res.status(500).json({ message: 'Server error' })
@@ -158,7 +228,7 @@ router.get('/:id', async (req, res) => {
 router.get('/:id/menu', async (req, res) => {
     try {
         const items = await prisma.menuItem.findMany({
-            where: { restaurantId: req.params.id, isAvailable: true },
+            where: { restaurantId: req.params.id, isAvailable: true, isArchived: false },
             orderBy: [{ category: 'asc' }, { name: 'asc' }]
         })
         res.json(items)

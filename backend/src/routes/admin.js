@@ -42,6 +42,29 @@ router.get('/users', async (_req, res) => {
     } catch (err) { res.status(500).json({ message: err.message }) }
 })
 
+// GET /api/admin/restaurants
+router.get('/restaurants', async (_req, res) => {
+    try {
+        const restaurants = await prisma.restaurant.findMany({
+            include: { owner: { select: { name: true, email: true } } },
+            orderBy: { createdAt: 'desc' },
+        })
+        res.json(restaurants)
+    } catch (err) { res.status(500).json({ message: err.message }) }
+})
+
+// PATCH /api/admin/restaurants/:id/approve
+router.patch('/restaurants/:id/approve', async (req, res) => {
+    try {
+        const { isApproved } = req.body
+        const restaurant = await prisma.restaurant.update({
+            where: { id: req.params.id },
+            data: { isApproved },
+        })
+        res.json(restaurant)
+    } catch (err) { res.status(500).json({ message: err.message }) }
+})
+
 // PATCH /api/admin/users/:id — block/unblock
 router.patch('/users/:id', async (req, res) => {
     try {
@@ -52,6 +75,48 @@ router.patch('/users/:id', async (req, res) => {
             select: { id: true, name: true, isBlocked: true, isVerified: true },
         })
         res.json(user)
+    } catch (err) { res.status(500).json({ message: err.message }) }
+})
+
+// GET /api/admin/promos
+router.get('/promos', async (_req, res) => {
+    try {
+        const promos = await prisma.promoCode.findMany({
+            where: { restaurantId: null },
+            orderBy: { createdAt: 'desc' },
+        })
+        res.json(promos)
+    } catch (err) { res.status(500).json({ message: err.message }) }
+})
+
+// POST /api/admin/promos
+router.post('/promos', async (req, res) => {
+    try {
+        const { code, discount, type, validTo, maxUses } = req.body
+        const promo = await prisma.promoCode.create({
+            data: {
+                code: code.toUpperCase(),
+                discount: parseFloat(discount),
+                type: type || 'percentage',
+                validTo: new Date(validTo),
+                maxUses: maxUses ? parseInt(maxUses) : null,
+                restaurantId: null, // Global promo
+            },
+        })
+        res.status(201).json(promo)
+    } catch (err) {
+        if (err.code === 'P2002') return res.status(400).json({ message: 'Promo code already exists' })
+        res.status(500).json({ message: err.message })
+    }
+})
+
+// DELETE /api/admin/promos/:id
+router.delete('/promos/:id', async (req, res) => {
+    try {
+        const existing = await prisma.promoCode.findFirst({ where: { id: req.params.id, restaurantId: null } })
+        if (!existing) return res.status(404).json({ message: 'Promo not found' })
+        await prisma.promoCode.delete({ where: { id: req.params.id } })
+        res.json({ message: 'Deleted' })
     } catch (err) { res.status(500).json({ message: err.message }) }
 })
 

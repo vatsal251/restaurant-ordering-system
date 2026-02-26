@@ -17,7 +17,9 @@ export default function RestaurantPage() {
     const [filterCat, setFilterCat] = useState('All')
     const [vegFilter, setVegFilter] = useState('all') // 'all' | 'veg' | 'nonveg'
     const [searchQuery, setSearchQuery] = useState('')
+    const [isFav, setIsFav] = useState(false)
     const { items: cartItems, addItem, updateQuantity, totalPrice } = useCartStore()
+    const user = api.defaults.headers.common['Authorization'] ? true : false // rough check if logged in
 
     useEffect(() => {
         Promise.all([
@@ -26,7 +28,23 @@ export default function RestaurantPage() {
         ]).then(([r, m]) => { setRestaurant(r.data); setMenu(m.data) })
             .catch(() => { })
             .finally(() => setLoading(false))
+
+        // Check if favorite
+        api.get('/api/customer/favorites')
+            .then(res => setIsFav(res.data.some(f => f.restaurantId === id)))
+            .catch(() => { })
     }, [id])
+
+    const toggleFav = async () => {
+        const next = !isFav
+        setIsFav(next)
+        try {
+            if (next) await api.post('/api/customer/favorites', { restaurantId: id })
+            else await api.delete(`/api/customer/favorites/${id}`)
+        } catch {
+            setIsFav(!next) // revert
+        }
+    }
 
     const cartCount = cartItems.reduce((s, i) => s + i.quantity, 0)
     const categories = ['All', ...new Set(menu.map(i => i.category).filter(Boolean))]
@@ -55,16 +73,26 @@ export default function RestaurantPage() {
                 {restaurant.imageUrl && (
                     <img src={restaurant.imageUrl} alt={restaurant.name} className="absolute inset-0 w-full h-full object-cover opacity-30" />
                 )}
-                <Link to="/" className="absolute top-4 left-4 w-8 h-8 bg-black/60 rounded-full flex items-center justify-center text-white z-10">←</Link>
-                <div className="relative z-10">
+
+                {/* Top Nav actions */}
+                <div className="absolute top-4 left-4 right-4 flex justify-between z-10">
+                    <Link to="/" className="w-10 h-10 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/10 hover:bg-black/80 transition-colors">←</Link>
+                    <button onClick={toggleFav} className="w-10 h-10 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 hover:bg-black/80 transition-all hover:scale-105">
+                        <span className={`text-xl transition-colors ${isFav ? 'text-brand-500 drop-shadow-[0_0_8px_rgba(255,107,107,0.8)]' : 'text-white drop-shadow-md'}`}>
+                            {isFav ? '♥' : '♡'}
+                        </span>
+                    </button>
+                </div>
+
+                <div className="relative z-10 w-full">
                     <h1 className="text-2xl font-bold">{restaurant.name}</h1>
-                    <div className="flex items-center gap-3 mt-1 text-sm text-gray-300 flex-wrap">
-                        <span className="flex items-center gap-1 bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">
+                    <div className="flex items-center gap-3 mt-1.5 text-sm text-gray-300 flex-wrap">
+                        <span className="flex items-center gap-1 bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-bold shadow-sm shadow-green-500/10">
                             ⭐ {restaurant.rating || '4.2'}
                         </span>
                         {restaurant.cuisineType && <span className="text-gray-400">• {restaurant.cuisineType}</span>}
                         <span className="text-gray-400">• 25–35 min</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${restaurant.isOpen ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${restaurant.isOpen ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
                             {restaurant.isOpen ? '● Open Now' : '● Closed'}
                         </span>
                     </div>

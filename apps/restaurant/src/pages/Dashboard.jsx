@@ -52,6 +52,8 @@ export default function Dashboard() {
         fetchOrders()
         // Load restaurant open status
         api.get('/api/restaurants/me/profile').then(r => setIsOpen(r.data.isOpen)).catch(() => { })
+
+        let titleInterval
         // Real-time socket for new orders
         const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3000')
         socket.emit('JOIN_RESTAURANT_ROOM', { userId: user?.id })
@@ -59,8 +61,30 @@ export default function Dashboard() {
             fetchOrders()
             // Play a notification sound
             try { new Audio('https://www.soundjay.com/buttons/sounds/button-09.mp3').play() } catch { }
+
+            // Flash browser tab title
+            if (!document.hasFocus()) {
+                let isOriginal = false
+                clearInterval(titleInterval)
+                titleInterval = setInterval(() => {
+                    document.title = isOriginal ? 'FoodRush Restaurant' : '(1) New Order! - FoodRush'
+                    isOriginal = !isOriginal
+                }, 1000)
+            }
         })
-        return () => socket.disconnect()
+
+        const handleFocus = () => {
+            clearInterval(titleInterval)
+            document.title = 'FoodRush Restaurant'
+        }
+        window.addEventListener('focus', handleFocus)
+
+        return () => {
+            socket.disconnect()
+            clearInterval(titleInterval)
+            window.removeEventListener('focus', handleFocus)
+            document.title = 'FoodRush Restaurant'
+        }
     }, [fetchOrders, user])
 
     const toggleOpen = async () => {
@@ -101,14 +125,15 @@ export default function Dashboard() {
                         onClick={toggleOpen}
                         disabled={togglingOpen}
                         className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border font-semibold transition-all ${isOpen
-                                ? 'bg-green-500/10 text-green-400 border-green-500/30 hover:bg-green-500/20'
-                                : 'bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500/20'
+                            ? 'bg-green-500/10 text-green-400 border-green-500/30 hover:bg-green-500/20'
+                            : 'bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500/20'
                             }`}
                     >
                         <span className={`w-2 h-2 rounded-full ${isOpen ? 'bg-green-400' : 'bg-red-400'} ${!togglingOpen && 'animate-pulse'}`} />
                         {togglingOpen ? '...' : isOpen ? 'Open' : 'Closed'}
                     </button>
                     <Link to="/menu" className="text-gray-400 hover:text-white text-sm">Menu</Link>
+                    <Link to="/promotions" className="text-gray-400 hover:text-white text-sm">Promos</Link>
                     <Link to="/analytics" className="text-gray-400 hover:text-white text-sm">Analytics</Link>
                     <button onClick={logout} className="text-gray-500 hover:text-white text-sm">Logout</button>
                 </div>

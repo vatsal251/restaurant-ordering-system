@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -19,6 +20,7 @@ model User {
   passwordHash String
   isVerified   Boolean  @default(false)
   isBlocked    Boolean  @default(false)
+  earnings     Float    @default(0.0) // Specifically for delivery partners
   createdAt    DateTime @default(now())
 
   // Relations
@@ -27,6 +29,7 @@ model User {
   restaurant     Restaurant?
   reviews        Review[]
   notifications  Notification[]
+  favorites      Favorite[]
 
   @@map("users")
 }
@@ -49,14 +52,29 @@ model Restaurant {
   cuisineType String?
   rating      Float    @default(4.0)
   isOpen      Boolean  @default(true)
+  isApproved  Boolean  @default(true)
   imageUrl    String?
   createdAt   DateTime @default(now())
 
-  menuItems MenuItem[]
-  orders    Order[]
-  reviews   Review[]
+  menuItems   MenuItem[]
+  orders      Order[]
+  reviews     Review[]
+  favoritedBy Favorite[]
+  promoCodes  PromoCode[]
 
   @@map("restaurants")
+}
+
+model Favorite {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  createdAt    DateTime   @default(now())
+
+  @@unique([userId, restaurantId])
+  @@map("favorites")
 }
 
 model MenuItem {
@@ -69,6 +87,9 @@ model MenuItem {
   category     String?
   imageUrl     String?
   isAvailable  Boolean    @default(true)
+  isVeg        Boolean    @default(true)
+  isArchived   Boolean    @default(false)
+  moodTags     String[]   @default([])
   createdAt    DateTime   @default(now())
 
   orderItems OrderItem[]
@@ -77,19 +98,23 @@ model MenuItem {
 }
 
 model Order {
-  id                String        @id @default(cuid())
-  customerId        String
-  customer          User          @relation("CustomerOrders", fields: [customerId], references: [id])
-  restaurantId      String
-  restaurant        Restaurant    @relation(fields: [restaurantId], references: [id])
-  deliveryPartnerId String?
-  deliveryPartner   User?         @relation("DeliveryOrders", fields: [deliveryPartnerId], references: [id])
-  status            OrderStatus   @default(placed)
-  totalAmount       Float
-  paymentStatus     PaymentStatus @default(pending)
-  deliveryAddress   String
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  id                   String        @id @default(cuid())
+  customerId           String
+  customer             User          @relation("CustomerOrders", fields: [customerId], references: [id])
+  restaurantId         String
+  restaurant           Restaurant    @relation(fields: [restaurantId], references: [id])
+  deliveryPartnerId    String?
+  deliveryPartner      User?         @relation("DeliveryOrders", fields: [deliveryPartnerId], references: [id])
+  status               OrderStatus   @default(placed)
+  totalAmount          Float
+  tipAmount            Float         @default(0.0)
+  paymentStatus        PaymentStatus @default(pending)
+  deliveryAddress      String
+  cookingInstructions  String?
+  deliveryInstructions String?
+  promoCodeId          String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 
   orderItems       OrderItem[]
   payment          Payment?
@@ -97,6 +122,7 @@ model Order {
   tracking         DeliveryTracking[]
   sealVerification SealVerification?
   notifications    Notification[]
+  promoCode        PromoCode?         @relation(fields: [promoCodeId], references: [id])
 
   @@map("orders")
 }
@@ -205,4 +231,28 @@ enum SealVerdict {
   intact
   suspicious
   tampered
+}
+
+model PromoCode {
+  id           String      @id @default(cuid())
+  code         String      @unique
+  discount     Float
+  type         PromoType   @default(percentage)
+  validFrom    DateTime    @default(now())
+  validTo      DateTime
+  restaurantId String? // null means global promo
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+  maxUses      Int?
+  usedCount    Int         @default(0)
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+
+  orders Order[]
+
+  @@map("promo_codes")
+}
+
+enum PromoType {
+  percentage
+  flat
 }

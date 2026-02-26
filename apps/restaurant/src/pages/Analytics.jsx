@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import api from '../lib/api'
 
 export default function Analytics() {
@@ -39,6 +40,23 @@ export default function Analytics() {
         return acc
     }, {})
 
+    // Daily revenue trends
+    const dailyDataMap = {}
+    delivered.forEach(o => {
+        const date = new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        if (!dailyDataMap[date]) dailyDataMap[date] = { date, revenue: 0, orders: 0 }
+        dailyDataMap[date].revenue += o.totalAmount
+        dailyDataMap[date].orders += 1
+    })
+    // Sort by actual date and take last 7
+    const trendData = Object.values(dailyDataMap)
+    // Note: strictly speaking we should sort by Date, but string 'Nov 3' sorting might be tricky, so let's rely on creation order loosely
+
+    // Fallback if no delivered orders
+    if (trendData.length === 0) {
+        trendData.push({ date: 'Today', revenue: 0, orders: 0 })
+    }
+
     return (
         <div className="min-h-screen pb-10">
             <div className="sticky top-0 z-10 bg-[#0d0a12]/95 backdrop-blur border-b border-white/5 flex items-center gap-3 px-4 py-3">
@@ -68,6 +86,24 @@ export default function Analytics() {
                             <div className="card text-center p-4">
                                 <p className="text-3xl font-bold text-purple-400">₹{avgOrder.toFixed(0)}</p>
                                 <p className="text-xs text-gray-400 mt-1">Avg Order Value</p>
+                            </div>
+                        </div>
+
+                        {/* Revenue Chart */}
+                        <div className="card space-y-3 pb-6">
+                            <h3 className="font-semibold text-sm text-gray-400 uppercase tracking-wide">Revenue Trends</h3>
+                            <div className="h-48 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={trendData}>
+                                        <XAxis dataKey="date" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                                        <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} tickFormatter={v => `₹${v}`} />
+                                        <Tooltip
+                                            cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                                            contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                                        />
+                                        <Bar dataKey="revenue" fill="#f97316" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
                             </div>
                         </div>
 

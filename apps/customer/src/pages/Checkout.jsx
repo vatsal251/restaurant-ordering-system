@@ -12,14 +12,29 @@ export default function Checkout() {
     const [address, setAddress] = useState(user?.address || '')
     const [phone, setPhone] = useState(user?.phone || '')
     const [instructions, setInstructions] = useState('')
+    const [cookingInstructions, setCookingInstructions] = useState('')
+    const [tipAmount, setTipAmount] = useState(0)
+    const [promoCode, setPromoCode] = useState('')
+    const [appliedPromo, setAppliedPromo] = useState(null)
+    const [promoError, setPromoError] = useState('')
     const [paymentMethod, setPaymentMethod] = useState('razorpay')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
 
     const subtotal = totalPrice()
-    const deliveryFee = 40
-    const taxes = Math.round(subtotal * 0.05)
-    const grandTotal = subtotal + deliveryFee + taxes
+
+    let discount = 0
+    if (appliedPromo) {
+        discount = appliedPromo.type === 'percentage'
+            ? subtotal * (appliedPromo.discount / 100)
+            : appliedPromo.discount
+    }
+    const discountedSubtotal = Math.max(0, subtotal - discount)
+
+    const deliveryFee = subtotal >= 299 ? 0 : 40
+    const taxes = Math.round(discountedSubtotal * 0.05)
+    // Add tip amount strictly as a number to avoid string concatenation
+    const grandTotal = discountedSubtotal + deliveryFee + taxes + Number(tipAmount)
 
     useEffect(() => {
         if (items.length === 0) navigate('/cart')
@@ -34,6 +49,17 @@ export default function Checkout() {
         return () => document.body.removeChild(script)
     }, [])
 
+    const applyPromo = async () => {
+        if (!promoCode.trim()) return
+        setPromoError(''); setAppliedPromo(null)
+        try {
+            const { data } = await api.post('/api/orders/validate-promo', { code: promoCode, restaurantId })
+            setAppliedPromo(data)
+        } catch (err) {
+            setPromoError(err.response?.data?.message || 'Invalid promo code')
+        }
+    }
+
     const placeOrder = async () => {
         if (!address.trim()) { setError('Please enter a delivery address'); return }
         setLoading(true); setError('')
@@ -44,6 +70,9 @@ export default function Checkout() {
                 deliveryAddress: address,
                 phone,
                 instructions,
+                cookingInstructions,
+                tipAmount: Number(tipAmount),
+                promoCodeId: appliedPromo?.id,
                 items: items.map(i => ({ menuItemId: i.id, quantity: i.quantity, unitPrice: i.price })),
                 totalAmount: grandTotal,
                 paymentMethod,
@@ -128,10 +157,52 @@ export default function Checkout() {
                         id="instructions"
                         type="text"
                         className="input"
-                        placeholder="Delivery instructions (optional)"
+                        placeholder="Delivery instructions (e.g., Leave at door)"
                         value={instructions}
                         onChange={e => setInstructions(e.target.value)}
                     />
+                    <input
+                        id="cooking-instructions"
+                        type="text"
+                        className="input"
+                        placeholder="Cooking instructions (e.g., Make it spicy)"
+                        value={cookingInstructions}
+                        onChange={e => setCookingInstructions(e.target.value)}
+                    />
+                </div>
+
+                {/* Offers & Tips */}
+                <div className="card space-y-4">
+                    <div>
+                        <h2 className="font-semibold flex items-center gap-2 mb-2">🏷️ Apply Promo Code</h2>
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                className="input uppercase"
+                                placeholder="TRYNEW"
+                                value={promoCode}
+                                onChange={e => setPromoCode(e.target.value)}
+                            />
+                            <button onClick={applyPromo} className="btn-primary whitespace-nowrap px-4">Apply</button>
+                        </div>
+                        {appliedPromo && <p className="text-green-400 text-sm mt-1">✔ Promo '{appliedPromo.code}' applied!</p>}
+                        {promoError && <p className="text-red-400 text-sm mt-1">{promoError}</p>}
+                    </div>
+
+                    <div className="border-t border-white/10 pt-4">
+                        <h2 className="font-semibold flex items-center gap-2 mb-2">💝 Tip your delivery partner</h2>
+                        <div className="flex gap-2">
+                            {[0, 10, 20, 50].map(amt => (
+                                <button
+                                    key={amt}
+                                    onClick={() => setTipAmount(amt)}
+                                    className={`flex-1 py-2 rounded-xl border text-sm transition-colors ${tipAmount === amt ? 'bg-brand-500/20 border-brand-500 text-brand-500' : 'border-white/10 hover:border-white/30 text-gray-300'}`}
+                                >
+                                    {amt === 0 ? 'No Tip' : `₹${amt}`}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 </div>
 
                 {/* Order Summary */}
@@ -144,10 +215,16 @@ export default function Checkout() {
                         </div>
                     ))}
                     <div className="border-t border-white/10 pt-2 space-y-1 text-sm">
-                        <div className="flex justify-between text-gray-400"><span>Delivery Fee</span><span>₹{deliveryFee}</span></div>
+                        <div className="flex justify-between text-gray-400"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
+                        {discount > 0 && <div className="flex justify-between text-green-400"><span>Discount</span><span>-₹{discount.toFixed(2)}</span></div>}
+                        <div className="flex justify-between text-gray-400">
+                            <span>Delivery Fee</span>
+                            {deliveryFee === 0 ? <span className="text-green-400 font-medium">FREE</span> : <span>₹{deliveryFee}</span>}
+                        </div>
                         <div className="flex justify-between text-gray-400"><span>GST (5%)</span><span>₹{taxes}</span></div>
-                        <div className="flex justify-between font-bold text-base pt-1">
-                            <span>Total</span><span className="text-brand-500">₹{grandTotal}</span>
+                        {tipAmount > 0 && <div className="flex justify-between text-brand-400"><span>Delivery Tip</span><span>₹{tipAmount}</span></div>}
+                        <div className="flex justify-between font-bold text-base pt-1 border-t border-white/5 mt-1">
+                            <span>Total</span><span className="text-brand-500">₹{grandTotal.toFixed(2)}</span>
                         </div>
                     </div>
                 </div>
@@ -164,8 +241,8 @@ export default function Checkout() {
                                 key={method.id}
                                 id={`pay-${method.id}`}
                                 className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${paymentMethod === method.id
-                                        ? 'border-brand-500 bg-brand-500/10'
-                                        : 'border-white/10 hover:border-white/20'
+                                    ? 'border-brand-500 bg-brand-500/10'
+                                    : 'border-white/10 hover:border-white/20'
                                     }`}
                             >
                                 <input

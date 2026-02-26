@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import api from '../lib/api'
 
 const CATEGORIES = ['Starters', 'Main Course', 'Breads', 'Rice', 'Desserts', 'Beverages', 'Sides']
+const MOOD_OPTIONS = ['comforting', 'healthy', 'spicy', 'sweet', 'cheat', 'light']
 
-const emptyForm = { name: '', description: '', price: '', category: '', isAvailable: true }
+const emptyForm = { name: '', description: '', price: '', category: '', isAvailable: true, isVeg: true, moodTags: [] }
 
 export default function Menu() {
     const [items, setItems] = useState([])
@@ -27,7 +28,15 @@ export default function Menu() {
 
     const openAdd = () => { setForm(emptyForm); setEditId(null); setShowForm(true) }
     const openEdit = (item) => {
-        setForm({ name: item.name, description: item.description || '', price: String(item.price), category: item.category || '', isAvailable: item.isAvailable })
+        setForm({
+            name: item.name,
+            description: item.description || '',
+            price: String(item.price),
+            category: item.category || '',
+            isAvailable: item.isAvailable,
+            isVeg: item.isVeg !== false,
+            moodTags: item.moodTags || []
+        })
         setEditId(item.id)
         setShowForm(true)
     }
@@ -61,7 +70,10 @@ export default function Menu() {
         try {
             await api.delete(`/api/restaurants/me/menu/${id}`)
             setItems(it => it.filter(i => i.id !== id))
-        } catch { alert('Failed to delete') }
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to delete')
+            fetchMenu() // Refresh as it might have been soft-deleted
+        }
         finally { setDeletingId(null) }
     }
 
@@ -130,6 +142,9 @@ export default function Menu() {
                                 className={`card flex items-center gap-3 ${!item.isAvailable ? 'opacity-50' : ''}`}>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
+                                        <span className={`inline-flex items-center justify-center w-4 h-4 border-2 rounded-sm shrink-0 mr-1 ${item.isVeg !== false ? 'border-green-500' : 'border-red-500'}`}>
+                                            <span className={`w-2 h-2 rounded-full ${item.isVeg !== false ? 'bg-green-500' : 'bg-red-500'}`} />
+                                        </span>
                                         <p className="font-medium truncate">{item.name}</p>
                                         {item.category && (
                                             <span className="text-xs bg-brand-500/10 text-brand-500 px-2 py-0.5 rounded-full">{item.category}</span>
@@ -192,11 +207,43 @@ export default function Menu() {
                                     </select>
                                 </div>
                             </div>
-                            <label className="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" className="w-4 h-4 accent-brand-500" checked={form.isAvailable}
-                                    onChange={e => setForm({ ...form, isAvailable: e.target.checked })} />
-                                <span className="text-sm text-gray-300">Available for ordering</span>
-                            </label>
+                            <div className="flex gap-6">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" className="w-4 h-4 accent-brand-500" checked={form.isAvailable}
+                                        onChange={e => setForm({ ...form, isAvailable: e.target.checked })} />
+                                    <span className="text-sm text-gray-300">Available</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" className="w-4 h-4 accent-green-500" checked={form.isVeg}
+                                        onChange={e => setForm({ ...form, isVeg: e.target.checked })} />
+                                    <span className="text-sm text-gray-300">Vegetarian</span>
+                                </label>
+                            </div>
+
+                            {/* Mood Tags */}
+                            <div className="pt-2 border-t border-white/10">
+                                <label className="text-xs text-gray-400 mb-2 block">Mood Tags (for Surprise Meal)</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {MOOD_OPTIONS.map(mood => (
+                                        <button
+                                            key={mood}
+                                            type="button"
+                                            onClick={() => {
+                                                const tags = form.moodTags.includes(mood)
+                                                    ? form.moodTags.filter(t => t !== mood)
+                                                    : [...form.moodTags, mood]
+                                                setForm({ ...form, moodTags: tags })
+                                            }}
+                                            className={`text-xs px-2.5 py-1 rounded-full border transition-colors capitalize ${form.moodTags.includes(mood)
+                                                    ? 'bg-brand-500/20 border-brand-500 text-brand-400'
+                                                    : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
+                                                }`}
+                                        >
+                                            {mood === 'cheat' ? 'cheat meal' : mood}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                             <div className="flex gap-3 pt-2">
                                 <button type="button" onClick={() => setShowForm(false)} className="btn-outline flex-1">Cancel</button>
                                 <button id="save-item-btn" type="submit" disabled={saving} className="btn-primary flex-1 disabled:opacity-50">

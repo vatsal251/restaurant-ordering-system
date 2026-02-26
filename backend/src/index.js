@@ -7,11 +7,14 @@ import { Server } from 'socket.io'
 import 'dotenv/config'
 
 import authRoutes from './routes/auth.js'
+import customerRoutes from './routes/customer.js'
 import restaurantRoutes from './routes/restaurants.js'
-import orderRoutes from './routes/orders.js'
 import deliveryRoutes from './routes/delivery.js'
 import adminRoutes from './routes/admin.js'
+import orderRoutes from './routes/orders.js'
 import sealRoutes from './routes/seal.js'
+import searchRoutes from './routes/search.js'
+import surpriseRoutes from './routes/surprise.js'
 import { setupSocketHandlers } from './sockets/index.js'
 
 const app = express()
@@ -53,11 +56,14 @@ app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date()
 
 // API Routes
 app.use('/api/auth', authRoutes)
+app.use('/api/customer', customerRoutes)
 app.use('/api/restaurants', restaurantRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/delivery', deliveryRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/seal', sealRoutes)
+app.use('/api/search', searchRoutes)
+app.use('/api/surprise', surpriseRoutes)
 
 // Socket handlers
 setupSocketHandlers(io)

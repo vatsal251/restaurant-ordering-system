@@ -44,11 +44,29 @@ export default function Profile() {
                     </span>
                 </div>
 
+                {/* Quick actions grid */}
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                    <Link to="/favourites" className="card flex items-center gap-3 p-4 hover:bg-white/5 transition-colors group">
+                        <div className="w-10 h-10 rounded-full bg-brand-500/10 flex items-center justify-center text-xl group-hover:bg-brand-500/20 transition-colors">♥</div>
+                        <div>
+                            <p className="font-semibold text-white">Favourites</p>
+                            <p className="text-xs text-gray-400">Saved places</p>
+                        </div>
+                    </Link>
+                    <Link to="/orders" className="card flex items-center gap-3 p-4 hover:bg-white/5 transition-colors group">
+                        <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-xl group-hover:bg-blue-500/20 transition-colors">📦</div>
+                        <div>
+                            <p className="font-semibold text-white">Orders</p>
+                            <p className="text-xs text-gray-400">History & config</p>
+                        </div>
+                    </Link>
+                </div>
+
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-3">
                     <div className="card text-center p-3">
                         <p className="text-xl font-bold text-brand-500">{orders.length}</p>
-                        <p className="text-xs text-gray-400 mt-1">Total Orders</p>
+                        <p className="text-xs text-gray-400 mt-1">Total</p>
                     </div>
                     <div className="card text-center p-3">
                         <p className="text-xl font-bold text-green-400">{orders.filter(o => o.status === 'delivered').length}</p>
@@ -56,7 +74,7 @@ export default function Profile() {
                     </div>
                     <div className="card text-center p-3">
                         <p className="text-xl font-bold text-yellow-400">₹{totalSpent.toFixed(0)}</p>
-                        <p className="text-xs text-gray-400 mt-1">Total Spent</p>
+                        <p className="text-xs text-gray-400 mt-1">Spent</p>
                     </div>
                 </div>
 

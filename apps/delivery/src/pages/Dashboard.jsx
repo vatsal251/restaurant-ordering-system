@@ -101,8 +101,8 @@ export default function Dashboard() {
                     <button
                         onClick={() => setIsOnline(o => !o)}
                         className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border font-semibold transition-all ${isOnline
-                                ? 'bg-green-500/10 text-green-400 border-green-500/30 hover:bg-green-500/20'
-                                : 'bg-gray-500/10 text-gray-400 border-gray-500/30 hover:bg-gray-500/20'
+                            ? 'bg-green-500/10 text-green-400 border-green-500/30 hover:bg-green-500/20'
+                            : 'bg-gray-500/10 text-gray-400 border-gray-500/30 hover:bg-gray-500/20'
                             }`}
                     >
                         <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-400 animate-pulse' : 'bg-gray-500'}`} />
@@ -128,13 +128,10 @@ export default function Dashboard() {
                 {activeDelivery && (
                     <div className="card border border-brand-500/40 bg-brand-500/5 space-y-3">
                         <p className="text-brand-500 font-semibold text-sm">🚴 Currently Delivering</p>
-                        <div className="flex justify-between items-center">
+                        <div className="flex justify-between items-start mb-2">
                             <div>
-                                <p className="font-medium">#{activeDelivery.id.slice(-6).toUpperCase()}</p>
-                                <p className="text-gray-400 text-sm">
-                                    {activeDelivery.restaurant?.name} → {activeDelivery.customer?.name}
-                                </p>
-                                <p className="text-brand-500 font-semibold">₹{activeDelivery.totalAmount}</p>
+                                <p className="font-medium text-lg">#{activeDelivery.id.slice(-6).toUpperCase()}</p>
+                                <p className="text-brand-500 font-bold text-xl mt-1">₹{activeDelivery.totalAmount}</p>
                             </div>
                             <button
                                 id={`deliver-${activeDelivery.id}`}
@@ -144,6 +141,45 @@ export default function Dashboard() {
                             >
                                 {updatingId === activeDelivery.id ? '…' : '✅ Mark Delivered'}
                             </button>
+                        </div>
+
+                        {/* Navigation Links */}
+                        <div className="space-y-3 bg-white/5 p-3 rounded-xl border border-white/10">
+                            {/* Pickup */}
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-start gap-2 max-w-[70%]">
+                                    <span className="text-yellow-400 mt-0.5">🏪</span>
+                                    <div>
+                                        <p className="font-medium text-sm text-gray-200">Pickup</p>
+                                        <p className="text-gray-400 text-xs truncate">{activeDelivery.restaurant?.name}</p>
+                                    </div>
+                                </div>
+                                <a
+                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activeDelivery.restaurant?.address || activeDelivery.restaurant?.name)}`}
+                                    target="_blank" rel="noopener noreferrer"
+                                    className="bg-brand-500/20 text-brand-500 text-xs px-3 py-1.5 rounded-full font-semibold border border-brand-500/30 flex items-center gap-1 hover:bg-brand-500 hover:text-white transition-all"
+                                >
+                                    🗺️ Navigate
+                                </a>
+                            </div>
+
+                            {/* Drop */}
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-start gap-2 max-w-[70%]">
+                                    <span className="text-brand-500 mt-0.5">📍</span>
+                                    <div>
+                                        <p className="font-medium text-sm text-gray-200">Drop</p>
+                                        <p className="text-gray-400 text-xs truncate">{activeDelivery.customer?.name}</p>
+                                    </div>
+                                </div>
+                                <a
+                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activeDelivery.deliveryAddress)}`}
+                                    target="_blank" rel="noopener noreferrer"
+                                    className="bg-brand-500/20 text-brand-500 text-xs px-3 py-1.5 rounded-full font-semibold border border-brand-500/30 flex items-center gap-1 hover:bg-brand-500 hover:text-white transition-all"
+                                >
+                                    🗺️ Navigate
+                                </a>
+                            </div>
                         </div>
                         <Link
                             to={`/order/${activeDelivery.id}/seal`}
@@ -210,18 +246,41 @@ export default function Dashboard() {
 
                                     {/* Pickup → Drop */}
                                     <div className="space-y-1.5 text-sm">
-                                        <div className="flex items-start gap-2">
-                                            <span className="text-yellow-400 mt-0.5">🏪</span>
-                                            <div>
-                                                <p className="font-medium">{order.restaurant?.name}</p>
-                                                <p className="text-gray-500 text-xs">{order.restaurant?.address || 'Pickup location'}</p>
+                                        <div className="flex flex-col gap-1.5 bg-white/5 p-2 rounded-lg border border-white/10">
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex items-start gap-2 max-w-[70%]">
+                                                    <span className="text-yellow-400 mt-0.5">🏪</span>
+                                                    <div>
+                                                        <p className="font-medium text-gray-200">Pickup</p>
+                                                        <p className="text-gray-400 text-xs truncate">{order.restaurant?.name}</p>
+                                                    </div>
+                                                </div>
+                                                <a
+                                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.restaurant?.address || order.restaurant?.name)}`}
+                                                    target="_blank" rel="noopener noreferrer"
+                                                    className="bg-brand-500/10 text-brand-500 text-[10px] px-2 py-1 rounded-full font-semibold border border-brand-500/20 flex items-center gap-1 hover:bg-brand-500 hover:text-white transition-all"
+                                                >
+                                                    🗺️ Maps
+                                                </a>
                                             </div>
-                                        </div>
-                                        <div className="flex items-start gap-2">
-                                            <span className="text-brand-500 mt-0.5">📍</span>
-                                            <div>
-                                                <p className="font-medium text-gray-300">{order.customer?.name}</p>
-                                                <p className="text-gray-500 text-xs">{order.deliveryAddress}</p>
+
+                                            <div className="w-px h-3 bg-white/10 ml-3.5 my-0.5"></div>
+
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex items-start gap-2 max-w-[70%]">
+                                                    <span className="text-brand-500 mt-0.5">📍</span>
+                                                    <div>
+                                                        <p className="font-medium text-gray-200">Drop</p>
+                                                        <p className="text-gray-400 text-xs truncate">{order.deliveryAddress}</p>
+                                                    </div>
+                                                </div>
+                                                <a
+                                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.deliveryAddress)}`}
+                                                    target="_blank" rel="noopener noreferrer"
+                                                    className="bg-brand-500/10 text-brand-500 text-[10px] px-2 py-1 rounded-full font-semibold border border-brand-500/20 flex items-center gap-1 hover:bg-brand-500 hover:text-white transition-all"
+                                                >
+                                                    🗺️ Maps
+                                                </a>
                                             </div>
                                         </div>
                                     </div>

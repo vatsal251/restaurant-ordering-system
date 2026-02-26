@@ -1,23 +1,9 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 
-const prisma = new PrismaClient()
-
-async function check() {
-    try {
-        const r = await prisma.restaurant.findMany({
-            select: {
-                id: true,
-                name: true,
-                isOpen: true,
-                _count: { select: { menuItems: true } }
-            }
-        })
-        console.log(JSON.stringify(r, null, 2))
-    } catch (e) {
-        console.error('Error:', e)
-    } finally {
-        await prisma.$disconnect()
-    }
+async function main() {
+    const r = await prisma.restaurant.findUnique({ where: { id: 'cmlz564650001105a0xv5ra4f' } });
+    console.log(r);
 }
 
-check()
+main().finally(() => prisma.$disconnect());
