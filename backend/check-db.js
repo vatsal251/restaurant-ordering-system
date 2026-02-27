@@ -2,11 +2,7 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main() {
-    console.log('Users:', await prisma.user.count());
-    console.log('Restaurants:', await prisma.restaurant.count());
-    console.log('MenuItems:', await prisma.menuItem.count());
+    const r = await prisma.restaurant.findFirst({ where: { name: 'yo yo' } })
+    console.log(r)
 }
-
-main()
-    .catch(e => console.error(e))
-    .finally(() => prisma.$disconnect());
+main().catch(console.error).finally(() => prisma.$disconnect())

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useCartStore } from '../store/cartStore'
 import { useAuthStore } from '../store/authStore'
 import api from '../lib/api'
@@ -19,9 +19,14 @@ export default function Checkout() {
     const [promoCode, setPromoCode] = useState('')
     const [appliedPromo, setAppliedPromo] = useState(null)
     const [promoError, setPromoError] = useState('')
-    const [paymentMethod, setPaymentMethod] = useState('razorpay')
+    const [paymentMethod, setPaymentMethod] = useState('upi')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
+    const location = useLocation()
+    const donation = location.state?.donation || 0
+    const platformFee = items.length > 0 ? 4 : 0
+    const packagingFee = items.length > 0 ? 15 : 0
+    const surgeFee = location.state?.surgeFee || 0
 
     const subtotal = totalPrice()
 
@@ -36,7 +41,7 @@ export default function Checkout() {
     const deliveryFee = subtotal >= 299 ? 0 : 40
     const taxes = Math.round(discountedSubtotal * 0.05)
     // Add tip amount strictly as a number to avoid string concatenation
-    const grandTotal = discountedSubtotal + deliveryFee + taxes + Number(tipAmount)
+    const grandTotal = discountedSubtotal + deliveryFee + packagingFee + platformFee + surgeFee + taxes + donation + Number(tipAmount)
 
     useEffect(() => {
         if (items.length === 0) navigate('/cart')
@@ -99,7 +104,7 @@ export default function Checkout() {
                 promoCodeId: appliedPromo?.id,
                 items: items.map(i => ({ menuItemId: i.id, quantity: i.quantity, unitPrice: i.price })),
                 totalAmount: grandTotal,
-                paymentMethod,
+                paymentMethod: paymentMethod === 'cod' ? 'cod' : 'razorpay',
             })
 
             if (paymentMethod === 'cod') {
@@ -264,7 +269,11 @@ export default function Checkout() {
                             <span>Delivery Fee</span>
                             {deliveryFee === 0 ? <span className="text-green-400 font-medium">FREE</span> : <span>₹{deliveryFee}</span>}
                         </div>
+                        <div className="flex justify-between text-gray-400"><span>Packaging</span><span>₹{packagingFee}</span></div>
+                        {surgeFee > 0 && <div className="flex justify-between text-brand-400"><span>📈 High Demand Surge</span><span>₹{surgeFee}</span></div>}
+                        <div className="flex justify-between text-gray-400"><span>Platform Fee</span><span>₹{platformFee}</span></div>
                         <div className="flex justify-between text-gray-400"><span>GST (5%)</span><span>₹{taxes}</span></div>
+                        {donation > 0 && <div className="flex justify-between text-gray-400"><span>Feeding India Donation</span><span>₹{donation}</span></div>}
                         {tipAmount > 0 && <div className="flex justify-between text-brand-400"><span>Delivery Tip</span><span>₹{tipAmount}</span></div>}
                         <div className="flex justify-between font-bold text-base pt-1 border-t border-white/5 mt-1">
                             <span>Total</span><span className="text-brand-500">₹{grandTotal.toFixed(2)}</span>
@@ -275,15 +284,17 @@ export default function Checkout() {
                 {/* Payment Method */}
                 <div className="card space-y-3">
                     <h2 className="font-semibold flex items-center gap-2">💳 Payment Method</h2>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                         {[
-                            { id: 'razorpay', label: '💳 Pay Online (UPI / Card / Netbanking)', desc: 'Secure payment via Razorpay' },
-                            { id: 'cod', label: '💵 Cash on Delivery', desc: 'Pay when your order arrives' },
+                            { id: 'upi', label: 'UPI', desc: 'Google Pay, PhonePe, Paytm', icon: '⚡' },
+                            { id: 'cards', label: 'Credit / Debit Cards', desc: 'Secure payment via Razorpay', icon: '💳' },
+                            { id: 'wallets', label: 'Wallets', desc: 'Amazon Pay, MobiKwik, etc.', icon: '👛' },
+                            { id: 'cod', label: 'Cash on Delivery', desc: 'Pay when your order arrives', icon: '💵' },
                         ].map(method => (
                             <label
                                 key={method.id}
                                 id={`pay-${method.id}`}
-                                className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${paymentMethod === method.id
+                                className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-colors ${paymentMethod === method.id
                                     ? 'border-brand-500 bg-brand-500/10'
                                     : 'border-white/10 hover:border-white/20'
                                     }`}
@@ -294,11 +305,12 @@ export default function Checkout() {
                                     value={method.id}
                                     checked={paymentMethod === method.id}
                                     onChange={() => setPaymentMethod(method.id)}
-                                    className="accent-brand-500"
+                                    className="accent-brand-500 shrink-0"
                                 />
+                                <span className="text-2xl opacity-80">{method.icon}</span>
                                 <div>
-                                    <p className="text-sm font-medium">{method.label}</p>
-                                    <p className="text-xs text-gray-500">{method.desc}</p>
+                                    <p className="text-sm font-bold text-white mb-0.5">{method.label}</p>
+                                    <p className="text-[11px] text-gray-400 font-medium tracking-wide uppercase">{method.desc}</p>
                                 </div>
                             </label>
                         ))}

@@ -153,7 +153,7 @@ export default function SurpriseMe() {
                 <button
                     onClick={handleSurprise}
                     disabled={!mood || loading}
-                    className="btn-primary w-full py-4 text-lg font-bold shadow-[0_0_20px_rgba(249,115,22,0.4)] pointer-events-auto disabled:opacity-50 disabled:shadow-none hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
+                    className="btn-primary w-full py-4 text-lg font-bold shadow-[0_0_20px_#f9731666] pointer-events-auto disabled:opacity-50 disabled:shadow-none hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
                 >
                     🎲 Order Surprise Item
                 </button>

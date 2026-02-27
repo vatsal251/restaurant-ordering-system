@@ -280,9 +280,18 @@ export default function RestaurantPage() {
                             )}
                         </div>
 
-                        <div className="mt-8 pt-4 border-t border-white/5 flex gap-2 items-center text-xs text-gray-500">
-                            <span className="opacity-50 grayscale">🏢</span>
-                            <span>FSSAI Lic. No. 100200820{restaurant.id.slice(-4, -1)}</span>
+                        <div className="mt-8 pt-4 border-t border-white/5 space-y-3">
+                            <div className="flex items-center gap-3 p-3 bg-blue-900/20 border border-blue-500/20 rounded-xl">
+                                <span className="text-2xl">🛡️</span>
+                                <div>
+                                    <p className="text-sm text-blue-400 font-bold">Safety & Hygiene Verified</p>
+                                    <p className="text-xs text-gray-400">Regular temperature checks & sanitized kitchens.</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-2 items-center text-xs text-gray-500">
+                                <span className="opacity-50 grayscale">🏢</span>
+                                <span>FSSAI Lic. No. {restaurant.fssaiLicense || `100200820${restaurant.id.slice(-4, -1)}`}</span>
+                            </div>
                         </div>
                     </div>
                 </div>

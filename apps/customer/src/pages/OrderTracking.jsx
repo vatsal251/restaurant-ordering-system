@@ -110,7 +110,25 @@ export default function OrderTracking() {
                     </h2>
                     <p className="text-gray-400 text-sm mt-1">{STATUS_DESC[order.status]}</p>
                     {order.deliveryPartner && (
-                        <p className="text-xs text-gray-500 mt-2">🚴 {order.deliveryPartner.name} · {order.deliveryPartner.phone}</p>
+                        <div className="mt-4 bg-[#1a1a1a] p-3 rounded-xl border border-white/5 flex items-center justify-between shadow-md">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-brand-500/20 text-brand-500 flex items-center justify-center text-xl shadow-inner">
+                                    🚴
+                                </div>
+                                <div className="text-left">
+                                    <p className="text-sm font-bold text-white">{order.deliveryPartner.name}</p>
+                                    <p className="text-xs text-gray-400">Delivery Partner</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => alert('Chat feature coming soon!')} className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center hover:bg-blue-500/30 transition-colors shadow">
+                                    💬
+                                </button>
+                                <button onClick={() => window.open(`tel:${order.deliveryPartner.phone}`)} className="w-10 h-10 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center hover:bg-green-500/30 transition-colors shadow">
+                                    📞
+                                </button>
+                            </div>
+                        </div>
                     )}
                     {order.status === 'placed' && (
                         <button
@@ -122,6 +140,18 @@ export default function OrderTracking() {
                         </button>
                     )}
                 </div>
+
+                {/* Gamification Scratch Card */}
+                {!isCancelled && (
+                    <div className="card bg-gradient-to-r from-purple-900/60 to-brand-900/40 border border-purple-500/30 flex items-center justify-between p-4 cursor-pointer hover:scale-[1.02] transition-transform shadow-[0_0_15px_rgba(168,85,247,0.15)] overflow-hidden relative">
+                        <div className="absolute -right-4 -top-6 text-6xl opacity-10 blur-[2px]">🎁</div>
+                        <div className="relative z-10">
+                            <h3 className="font-bold text-white flex items-center gap-2">🎁 You won a Scratch Card!</h3>
+                            <p className="text-xs text-purple-300 mt-1">Tap to scratch and win up to ₹500 cashback.</p>
+                        </div>
+                        <span className="text-3xl animate-pulse drop-shadow-lg relative z-10">✨</span>
+                    </div>
+                )}
 
                 {/* Progress stepper */}
                 {!isCancelled && (

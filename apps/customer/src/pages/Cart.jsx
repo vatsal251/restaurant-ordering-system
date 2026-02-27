@@ -15,10 +15,19 @@ export default function Cart() {
     const [coupon, setCoupon] = useState('')
     const [appliedCoupon, setAppliedCoupon] = useState(null)
     const [couponError, setCouponError] = useState('')
+    const [addDonation, setAddDonation] = useState(false)
 
     const subtotal = totalPrice()
+    // Dynamic Pricing / Surge Fee
+    const currentHour = new Date().getHours()
+    const isSurgeHour = (currentHour >= 12 && currentHour <= 14) || (currentHour >= 19 && currentHour <= 21)
+    const surgeFee = isSurgeHour && items.length > 0 ? 25 : 0
+
     // Free delivery above ₹299
     const deliveryFee = (items.length > 0 && subtotal < 299) ? 40 : 0
+    const platformFee = items.length > 0 ? 4 : 0
+    const packagingFee = items.length > 0 ? 15 : 0
+    const donation = addDonation ? 2 : 0
     const taxes = Math.round(subtotal * 0.05)
     const amountForFreeDelivery = Math.max(0, 299 - subtotal)
     const freeDeliveryProgress = Math.min(100, (subtotal / 299) * 100)
@@ -47,7 +56,7 @@ export default function Cart() {
         else discount = Math.min(subtotal * appliedCoupon.discount, appliedCoupon.max)
     }
 
-    const grandTotal = Math.max(0, subtotal + deliveryFee + taxes - discount)
+    const grandTotal = Math.max(0, subtotal + deliveryFee + platformFee + packagingFee + surgeFee + taxes + donation - discount)
 
     if (items.length === 0) {
         return (
@@ -154,24 +163,50 @@ export default function Cart() {
                     )}
                 </div>
 
+                {/* Donation Toggle */}
+                <div className="card flex items-center justify-between p-4 cursor-pointer" onClick={() => setAddDonation(!addDonation)}>
+                    <div className="flex items-center gap-3">
+                        <span className="text-2xl">🌱</span>
+                        <div>
+                            <p className="font-bold text-sm">Feeding India Donation</p>
+                            <p className="text-xs text-gray-400">Working towards a malnutrition-free nation.</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <span className="text-sm font-semibold">₹2</span>
+                        <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${addDonation ? 'bg-brand-500 border-brand-500' : 'border-white/20'}`}>
+                            {addDonation && <span className="text-white text-xs">✓</span>}
+                        </div>
+                    </div>
+                </div>
+
                 {/* Bill Summary */}
                 <div className="card space-y-3">
                     <h2 className="font-semibold text-sm text-gray-400 uppercase tracking-wide">Bill Summary</h2>
                     <div className="space-y-2 text-sm">
                         <div className="flex justify-between"><span className="text-gray-400">Item Total</span><span>₹{subtotal.toFixed(0)}</span></div>
                         <div className="flex justify-between"><span className="text-gray-400">Delivery Fee</span><span>₹{deliveryFee}</span></div>
-                        <div className="flex justify-between"><span className="text-gray-400">GST (5%)</span><span>₹{taxes}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-400">Packaging Charges</span><span>₹{packagingFee}</span></div>
+                        {surgeFee > 0 && (
+                            <div className="flex justify-between">
+                                <span className="text-brand-400 flex items-center gap-1">📈 High Demand Surge <span title="Extra fee due to peak hour traffic">ℹ️</span></span>
+                                <span>₹{surgeFee}</span>
+                            </div>
+                        )}
+                        <div className="flex justify-between"><span className="text-gray-400">Platform Fee</span><span>₹{platformFee}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-400">Taxes (GST)</span><span>₹{taxes}</span></div>
+                        {addDonation && <div className="flex justify-between"><span className="text-gray-400">Feeding India Donation</span><span>₹{donation}</span></div>}
                         {discount > 0 && (
                             <div className="flex justify-between text-green-400">
                                 <span>Coupon Discount ({appliedCoupon?.code})</span>
                                 <span>−₹{discount.toFixed(0)}</span>
                             </div>
                         )}
-                        <div className="border-t border-white/10 pt-2 flex justify-between font-bold text-base">
-                            <span>Grand Total</span><span className="text-brand-500">₹{grandTotal.toFixed(0)}</span>
+                        <div className="border-t border-white/10 pt-3 mt-1 flex justify-between font-bold text-base">
+                            <span>To Pay</span><span className="text-brand-500">₹{grandTotal.toFixed(0)}</span>
                         </div>
                         {discount > 0 && (
-                            <p className="text-green-400 text-xs text-center bg-green-500/10 rounded-lg py-1.5">
+                            <p className="text-green-400 text-xs text-center bg-green-500/10 rounded-lg py-2 mt-2 font-medium border border-green-500/20">
                                 🎉 You're saving ₹{discount.toFixed(0)} on this order!
                             </p>
                         )}
@@ -186,11 +221,13 @@ export default function Cart() {
 
             {/* Fixed bottom checkout button */}
             <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0f0f0f]/95 backdrop-blur border-t border-white/10">
-                <Link to="/checkout" id="checkout-btn" state={{ discount, couponCode: appliedCoupon?.code }}
-                    className="btn-primary w-full flex items-center justify-between px-6 py-4 text-base">
-                    <span>{items.reduce((s, i) => s + i.quantity, 0)} items</span>
-                    <span>Proceed to Checkout →</span>
-                    <span>₹{grandTotal.toFixed(0)}</span>
+                <Link to="/checkout" id="checkout-btn" state={{ discount, couponCode: appliedCoupon?.code, donation, platformFee, packagingFee, surgeFee }}
+                    className="btn-primary w-full flex items-center justify-between px-6 py-4 text-base shadow-xl shadow-brand-500/20">
+                    <div className="flex flex-col items-start gap-1">
+                        <span className="font-bold">₹{grandTotal.toFixed(0)}</span>
+                        <span className="text-[10px] uppercase tracking-wide opacity-80 decoration-dotted underline">TOTAL</span>
+                    </div>
+                    <span className="font-bold text-lg">Checkout ➔</span>
                 </Link>
             </div>
         </div>

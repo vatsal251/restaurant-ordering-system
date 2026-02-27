@@ -16,7 +16,13 @@ import sealRoutes from './routes/seal.js'
 import searchRoutes from './routes/search.js'
 import surpriseRoutes from './routes/surprise.js'
 import addressRoutes from './routes/addresses.js'
+import uploadRoutes from './routes/upload.js'
 import { setupSocketHandlers } from './sockets/index.js'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const app = express()
 const httpServer = createServer(app)
@@ -35,7 +41,9 @@ const io = new Server(httpServer, {
 })
 
 // Middleware
-app.use(helmet())
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+}))
 app.use(cors({
     origin: [
         'http://localhost:5173',
@@ -66,6 +74,10 @@ app.use('/api/seal', sealRoutes)
 app.use('/api/addresses', addressRoutes)
 app.use('/api/search', searchRoutes)
 app.use('/api/surprise', surpriseRoutes)
+app.use('/api/upload', uploadRoutes)
+
+// Serve static files from 'uploads' directory
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')))
 
 // Socket handlers
 setupSocketHandlers(io)

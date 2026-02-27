@@ -11,6 +11,7 @@ export default function Search() {
     const [results, setResults] = useState({ restaurants: [], items: [] })
     const [loading, setLoading] = useState(false)
     const [activeTab, setActiveTab] = useState('restaurants') // 'restaurants' | 'dishes'
+    const [recentSearches, setRecentSearches] = useState([])
     const searchTimeoutRef = useRef(null)
 
     const cart = useCartStore()
@@ -18,11 +19,28 @@ export default function Search() {
     // Update URL when query changes (debounced lightly)
     useEffect(() => {
         const timeout = setTimeout(() => {
-            if (query) setSearchParams({ q: query }, { replace: true })
-            else setSearchParams({}, { replace: true })
-        }, 300)
+            if (query) {
+                setSearchParams({ q: query }, { replace: true })
+                // Save to recent searches
+                setRecentSearches(prev => {
+                    const updated = [query, ...prev.filter(q => q !== query)].slice(0, 5)
+                    localStorage.setItem('recentSearches', JSON.stringify(updated))
+                    return updated
+                })
+            } else {
+                setSearchParams({}, { replace: true })
+            }
+        }, 800)
         return () => clearTimeout(timeout)
     }, [query, setSearchParams])
+
+    // Load recent searches on mount
+    useEffect(() => {
+        try {
+            const saved = JSON.parse(localStorage.getItem('recentSearches'))
+            if (saved) setRecentSearches(saved)
+        } catch { }
+    }, [])
 
     useEffect(() => {
         if (!query.trim()) {
@@ -121,14 +139,31 @@ export default function Search() {
             {/* Results Area */}
             <div className="px-4 pt-4">
                 {!query ? (
-                    <div className="mt-10">
-                        <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-4">Popular Cuisines</h2>
-                        <div className="flex flex-wrap gap-2">
-                            {['Pizza 🍕', 'Burger 🍔', 'Biryani 🍲', 'Chinese 🍜', 'Desserts 🍨', 'Healthy 🥗'].map(c => (
-                                <button key={c} onClick={() => setQuery(c.split(' ')[0])} className="px-4 py-2 rounded-full border border-white/10 text-sm text-gray-300 hover:bg-white/5 transition-colors">
-                                    {c}
-                                </button>
-                            ))}
+                    <div className="mt-6 space-y-8">
+                        {recentSearches.length > 0 && (
+                            <div>
+                                <div className="flex justify-between items-center mb-3">
+                                    <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide">Recent Searches</h2>
+                                    <button onClick={() => { localStorage.removeItem('recentSearches'); setRecentSearches([]) }} className="text-xs text-brand-500 hover:underline">Clear</button>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {recentSearches.map(q => (
+                                        <button key={q} onClick={() => setQuery(q)} className="px-3 py-1.5 rounded-lg border border-white/10 text-sm text-gray-300 hover:bg-white/5 flex items-center gap-1">
+                                            <span>🕒</span> {q}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        <div>
+                            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-4">Trending Deals</h2>
+                            <div className="flex flex-wrap gap-2">
+                                {['Pizza 🍕', 'Burger 🍔', 'Biryani 🍲', 'Chinese 🍜', 'Desserts 🍨', 'Healthy 🥗'].map(c => (
+                                    <button key={c} onClick={() => setQuery(c.split(' ')[0])} className="px-4 py-2 rounded-full border border-white/10 text-sm focus:bg-brand-500/20 text-gray-300 hover:bg-white/5 transition-colors">
+                                        <span className="text-brand-500 text-xs mr-1">🔥</span> {c}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 ) : loading && results.restaurants.length === 0 && results.items.length === 0 ? (
@@ -147,22 +182,36 @@ export default function Search() {
                             ) : (
                                 results.restaurants.map(r => (
                                     <Link key={r.id} to={`/restaurant/${r.id}`} className="block">
-                                        <div className="card hover:scale-[1.01] transition-transform p-3 flex gap-4 items-center">
-                                            <div className="w-16 h-16 rounded-xl bg-[#1a1a1a] flex-shrink-0 overflow-hidden border border-white/5">
+                                        <div className="card hover:scale-[1.01] transition-transform p-3 flex gap-4 items-start relative overflow-hidden">
+                                            <div className="w-20 h-20 rounded-xl bg-[#1a1a1a] flex-shrink-0 overflow-hidden border border-white/5 relative">
                                                 {r.imageUrl ? <img src={r.imageUrl} className="w-full h-full object-cover" /> :
-                                                    <div className="w-full h-full flex items-center justify-center text-2xl">🍽️</div>}
+                                                    <div className="w-full h-full flex items-center justify-center text-3xl">🍽️</div>}
+                                                {r.isPromoted && <span className="absolute top-1 left-1 bg-gray-900/80 text-white text-[9px] uppercase px-1.5 rounded backdrop-blur font-bold border border-white/10">Ad</span>}
+                                                {!r.isOpen && <div className="absolute inset-0 bg-black/60 flex items-center justify-center"><span className="text-white text-[10px] font-bold">CLOSED</span></div>}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <h3 className="font-bold text-lg truncate">{r.name}</h3>
-                                                <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                                                    <span className="flex items-center gap-0.5 text-Brand-500 bg-brand-500/10 px-1.5 py-0.5 rounded text-brand-500 font-bold">
-                                                        ⭐ {r.rating.toFixed(1)}
-                                                    </span>
-                                                    <span className="truncate">{r.cuisineType}</span>
+                                                <div className="flex justify-between items-start">
+                                                    <h3 className="font-bold text-lg truncate flex items-center gap-1">
+                                                        {r.name}
+                                                        {r.isVegOnly && <span className="shrink-0 w-3 h-3 border border-green-600 p-0.5 flex justify-center items-center rounded-sm"><span className="w-1.5 h-1.5 bg-green-600 rounded-full"></span></span>}
+                                                    </h3>
+                                                    <div className="flex items-center gap-1 text-[11px] text-white bg-green-700 px-1.5 py-0.5 rounded shadow whitespace-nowrap">
+                                                        {r.rating?.toFixed(1) || '4.2'} ⭐
+                                                    </div>
                                                 </div>
-                                                <p className={`text-xs mt-1 ${r.isOpen ? 'text-gray-400' : 'text-red-400'}`}>
-                                                    {r.isOpen ? 'Takes ~30 mins' : 'Currently Closed'}
-                                                </p>
+                                                <p className="truncate text-xs text-gray-400 mt-0.5">{r.cuisineType}</p>
+
+                                                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                                    <span className="text-[10px] text-gray-300 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded">
+                                                        ⏱️ {r.deliveryTime || 30}m
+                                                    </span>
+                                                    <span className="text-[10px] text-gray-400">₹{r.costForTwo || 500} for two</span>
+                                                </div>
+
+                                                {/* Offers / Order count */}
+                                                <div className="mt-2 text-[10px] text-brand-400 font-medium">
+                                                    {r.costForTwo < 400 ? '🏷️ Flat ₹100 OFF' : '🚀 Free Delivery available'}
+                                                </div>
                                             </div>
                                         </div>
                                     </Link>

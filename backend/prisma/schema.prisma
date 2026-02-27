@@ -55,6 +55,14 @@ model Restaurant {
   isOpen      Boolean  @default(true)
   isApproved  Boolean  @default(true)
   imageUrl    String?
+
+  // Extra features for Discovery/Parity
+  isPromoted  Boolean  @default(false)
+  costForTwo  Int      @default(500)
+  deliveryTime Int     @default(30)
+  isVegOnly   Boolean  @default(false)
+  fssaiLicense String?
+
   createdAt   DateTime @default(now())
 
   menuItems   MenuItem[]

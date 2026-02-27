@@ -132,9 +132,12 @@ export default function Dashboard() {
                         <span className={`w-2 h-2 rounded-full ${isOpen ? 'bg-green-400' : 'bg-red-400'} ${!togglingOpen && 'animate-pulse'}`} />
                         {togglingOpen ? '...' : isOpen ? 'Open' : 'Closed'}
                     </button>
+                    <Link to="/orders" className="text-gray-400 hover:text-white text-sm">History</Link>
                     <Link to="/menu" className="text-gray-400 hover:text-white text-sm">Menu</Link>
                     <Link to="/promotions" className="text-gray-400 hover:text-white text-sm">Promos</Link>
                     <Link to="/analytics" className="text-gray-400 hover:text-white text-sm">Analytics</Link>
+                    <Link to="/reviews" className="text-gray-400 hover:text-white text-sm">Reviews</Link>
+                    <Link to="/profile" className="text-gray-400 hover:text-white text-sm">Profile</Link>
                     <button onClick={logout} className="text-gray-500 hover:text-white text-sm">Logout</button>
                 </div>
             </div>

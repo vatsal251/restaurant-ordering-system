@@ -21,8 +21,16 @@ const OFFERS = [
     { emoji: '🚀', title: 'Free Delivery', sub: 'On orders above ₹299', color: 'from-green-500/30 to-teal-500/20' },
     { emoji: '💥', title: 'FOODRUSH10 — 10% Off', sub: 'Apply code at checkout', color: 'from-orange-500/30 to-red-500/20' },
 ]
-
 export default function Home() {
+    const getMealRecommendation = () => {
+        const hour = new Date().getHours()
+        if (hour >= 5 && hour < 11) return { title: 'Early Morning Breakfast 🌅', sub: 'Kickstart your day with these options' }
+        if (hour >= 11 && hour < 16) return { title: 'Lunchtime Favorites 🍱', sub: 'Satisfy your midday cravings' }
+        if (hour >= 16 && hour < 19) return { title: 'Evening Snacks ☕', sub: 'Perfect bites for your tea time' }
+        if (hour >= 19 && hour < 23) return { title: 'Dinner Delights 🌙', sub: 'End your day with a hearty meal' }
+        return { title: 'Midnight Cravings 🦉', sub: 'Late night? We got you covered' }
+    }
+    const mealRec = getMealRecommendation()
     const { user, logout } = useAuthStore()
     const [restaurants, setRestaurants] = useState([])
     const [search, setSearch] = useState('')
@@ -238,6 +246,10 @@ export default function Home() {
             </div>
 
             {/* Restaurant grid */}
+            <div className="px-4 pb-3 pt-2">
+                <h2 className="text-xl font-bold flex items-center gap-2">{mealRec.title}</h2>
+                <p className="text-sm text-gray-400 mt-0.5">{mealRec.sub}</p>
+            </div>
             <div className="px-4 pb-8">
                 {loading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -264,38 +276,60 @@ export default function Home() {
                                         {r.imageUrl
                                             ? <img src={r.imageUrl} alt={r.name} className="w-full h-full object-cover" />
                                             : <span>{CUISINE_EMOJI[r.cuisineType] || '🍽️'}</span>}
+
+                                        {/* Badges Over Image */}
+                                        <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
+                                            {r.isPromoted && <span className="bg-gray-900/80 text-white text-[10px] uppercase px-2 py-0.5 rounded backdrop-blur font-bold border border-white/10">Ad</span>}
+                                            {r.rating > 4.5 && <span className="bg-pink-500 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-lg shadow-pink-500/20">Bestseller</span>}
+                                        </div>
+
+                                        {/* Bottom Left Badge - Live Order Count / Offers */}
+                                        <div className="absolute bottom-2 left-2 z-10 flex gap-2">
+                                            {r.costForTwo < 400 && <span className="bg-blue-600 border border-blue-400 text-white text-xs font-bold px-2 py-0.5 rounded shadow">Flat ₹100 OFF</span>}
+                                            {r.rating >= 4.0 && <span className="bg-brand-500/90 backdrop-blur text-white text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 shadow-lg">📈 50+ ordered recently</span>}
+                                        </div>
+
                                         {!r.isOpen && (
-                                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
                                                 <span className="text-white text-sm font-semibold bg-black/50 px-3 py-1 rounded-full">Closed</span>
                                             </div>
                                         )}
                                         {/* Favorite Toggle Button */}
                                         <button
                                             onClick={(e) => toggleFavorite(e, r.id)}
-                                            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/20 transition-all hover:scale-110 z-10"
+                                            className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/20 transition-all hover:scale-110 z-30"
                                         >
                                             <span className={`text-lg transition-colors ${favorites.has(r.id) ? 'text-brand-500' : 'text-white drop-shadow-md'}`}>
                                                 {favorites.has(r.id) ? '♥' : '♡'}
                                             </span>
                                         </button>
                                     </div>
-                                    <div className="p-4">
+                                    <div className="p-4 relative">
                                         <div className="flex items-start justify-between">
                                             <div>
-                                                <h3 className="font-semibold text-white">{r.name}</h3>
-                                                <p className="text-gray-400 text-sm">{r.cuisineType}</p>
+                                                <h3 className="font-semibold text-white text-lg leading-tight flex items-center gap-1">
+                                                    {r.name}
+                                                    {r.isVegOnly && <span className="shrink-0 w-3 h-3 border border-green-600 p-0.5 flex justify-center items-center rounded-sm"><span className="w-1.5 h-1.5 bg-green-600 rounded-full" title="Veg Only"></span></span>}
+                                                </h3>
+                                                <p className="text-gray-400 text-sm mt-0.5">{r.cuisineType}</p>
                                             </div>
-                                            <div className="flex items-center gap-1 bg-green-500/10 text-green-400 text-sm px-2 py-0.5 rounded-full shrink-0">
-                                                ⭐ {r.rating || '4.2'}
+                                            <div className="flex flex-col items-end gap-1">
+                                                <div className="flex items-center gap-1 bg-green-800 text-white text-sm px-2 py-0.5 rounded-md font-bold shrink-0 shadow">
+                                                    {r.rating || '4.2'} <span className="text-[10px]">⭐</span>
+                                                </div>
+                                                <div className="text-[10px] text-gray-500">{((r.rating || 4.2) * 120).toFixed(0)} ratings</div>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2 mt-2">
-                                            <span className={`badge ${r.isOpen ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
-                                                {r.isOpen ? '● Open' : '● Closed'}
+
+                                        <div className="flex items-center gap-2 mt-3 flex-wrap">
+                                            <span className="bg-white/5 border border-white/10 text-gray-300 text-xs px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+                                                ⏱️ {r.deliveryTime || 30} mins
                                             </span>
-                                            <span className="text-gray-500 text-xs">25–35 min</span>
-                                            <span className="text-gray-500 text-xs">·</span>
-                                            <span className="text-gray-500 text-xs">₹40 delivery</span>
+                                            <span className="text-gray-500 text-xs text-brand-400 border border-brand-500/30 bg-brand-500/10 px-2 py-0.5 rounded-full font-medium shadow-sm">
+                                                {r.costForTwo > 600 ? 'Free Delivery' : '₹40 Delivery'}
+                                            </span>
+                                            <span className="text-gray-500 text-xs px-2">·</span>
+                                            <span className="text-gray-400 text-xs font-medium">₹{r.costForTwo || 500} for two</span>
                                         </div>
                                     </div>
                                 </div>

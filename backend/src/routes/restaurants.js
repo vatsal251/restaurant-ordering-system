@@ -36,7 +36,7 @@ router.get('/me/menu', authenticate, requireRole('restaurant_owner'), async (req
 router.post('/me/menu', authenticate, requireRole('restaurant_owner'), async (req, res) => {
     try {
         const r = await getOwnerRestaurant(req.user.id)
-        const { name, description, price, category, isAvailable, isVeg } = req.body
+        const { name, description, price, category, isAvailable, isVeg, imageUrl } = req.body
         if (!name || !price) return res.status(400).json({ message: 'Name and price are required' })
         const item = await prisma.menuItem.create({
             data: {
@@ -46,7 +46,8 @@ router.post('/me/menu', authenticate, requireRole('restaurant_owner'), async (re
                 price: parseFloat(price),
                 category: category || null,
                 isAvailable: isAvailable ?? true,
-                isVeg: isVeg ?? true
+                isVeg: isVeg ?? true,
+                imageUrl
             }
         })
         res.status(201).json(item)
@@ -57,12 +58,12 @@ router.post('/me/menu', authenticate, requireRole('restaurant_owner'), async (re
 router.put('/me/menu/:itemId', authenticate, requireRole('restaurant_owner'), async (req, res) => {
     try {
         const r = await getOwnerRestaurant(req.user.id)
-        const { name, description, price, category, isAvailable, isVeg } = req.body
+        const { name, description, price, category, isAvailable, isVeg, imageUrl } = req.body
         const existing = await prisma.menuItem.findFirst({ where: { id: req.params.itemId, restaurantId: r.id, isArchived: false } })
         if (!existing) return res.status(404).json({ message: 'Item not found' })
         const item = await prisma.menuItem.update({
             where: { id: req.params.itemId },
-            data: { name, description, price: parseFloat(price), category: category || null, isAvailable, isVeg }
+            data: { name, description, price: parseFloat(price), category: category || null, isAvailable, isVeg, imageUrl }
         })
         res.json(item)
     } catch (err) { res.status(err.status || 500).json({ message: err.message }) }
@@ -103,10 +104,16 @@ router.get('/me/profile', authenticate, requireRole('restaurant_owner'), async (
 // PATCH /api/restaurants/me/profile
 router.patch('/me/profile', authenticate, requireRole('restaurant_owner'), async (req, res) => {
     try {
-        const { name, address, cuisineType, isOpen } = req.body
+        const { name, address, cuisineType, isOpen, costForTwo, deliveryTime, isVegOnly, fssaiLicense, imageUrl } = req.body
         const r = await prisma.restaurant.update({
             where: { ownerId: req.user.id },
-            data: { name, address, cuisineType, isOpen }
+            data: {
+                name, address, cuisineType, isOpen, imageUrl,
+                costForTwo: costForTwo ? parseInt(costForTwo) : undefined,
+                deliveryTime: deliveryTime ? parseInt(deliveryTime) : undefined,
+                isVegOnly: isVegOnly !== undefined ? isVegOnly : undefined,
+                fssaiLicense
+            }
         })
         res.json(r)
     } catch (err) { res.status(500).json({ message: err.message }) }
@@ -134,6 +141,22 @@ router.get('/me/promos', authenticate, requireRole('restaurant_owner'), async (r
         const r = await getOwnerRestaurant(req.user.id)
         const promos = await prisma.promoCode.findMany({ where: { restaurantId: r.id }, orderBy: { createdAt: 'desc' } })
         res.json(promos)
+    } catch (err) { res.status(err.status || 500).json({ message: err.message }) }
+})
+
+// GET /api/restaurants/me/reviews
+router.get('/me/reviews', authenticate, requireRole('restaurant_owner'), async (req, res) => {
+    try {
+        const r = await getOwnerRestaurant(req.user.id)
+        const reviews = await prisma.review.findMany({
+            where: { restaurantId: r.id },
+            include: {
+                customer: { select: { name: true } },
+                order: { select: { id: true, createdAt: true, totalAmount: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+        })
+        res.json(reviews)
     } catch (err) { res.status(err.status || 500).json({ message: err.message }) }
 })
 
@@ -194,14 +217,27 @@ router.get('/me/orders', authenticate, requireRole('restaurant_owner'), async (r
 // GET /api/restaurants
 router.get('/', async (req, res) => {
     try {
-        const { cuisine, search } = req.query
+        const { cuisine, search, filterVeg, minRating, sort } = req.query
+
+        let orderByList = []
+        if (sort === 'rating') orderByList.push({ rating: 'desc' })
+        else if (sort === 'price_asc') orderByList.push({ costForTwo: 'asc' })
+        else if (sort === 'price_desc') orderByList.push({ costForTwo: 'desc' })
+        else orderByList.push({ isPromoted: 'desc' }) // Default: Promoted on top
+
         const restaurants = await prisma.restaurant.findMany({
             where: {
                 isApproved: true,
                 ...(cuisine && cuisine !== 'All' && { cuisineType: cuisine }),
                 ...(search && { name: { contains: search, mode: 'insensitive' } }),
+                ...(filterVeg === 'true' && { isVegOnly: true }),
+                ...(minRating && { rating: { gte: parseFloat(minRating) } }),
             },
-            select: { id: true, name: true, cuisineType: true, rating: true, isOpen: true, imageUrl: true, address: true }
+            select: {
+                id: true, name: true, cuisineType: true, rating: true, isOpen: true, imageUrl: true, address: true,
+                isPromoted: true, costForTwo: true, deliveryTime: true, isVegOnly: true, fssaiLicense: true
+            },
+            orderBy: orderByList.length ? orderByList : undefined
         })
         res.json(restaurants)
     } catch (err) {
@@ -217,6 +253,7 @@ router.get('/:id', async (req, res) => {
             where: { id: req.params.id },
             select: {
                 id: true, name: true, cuisineType: true, rating: true, isOpen: true, isApproved: true, imageUrl: true, address: true,
+                isPromoted: true, costForTwo: true, deliveryTime: true, isVegOnly: true, fssaiLicense: true,
                 reviews: {
                     take: 5,
                     orderBy: { createdAt: 'desc' },

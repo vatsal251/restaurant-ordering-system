@@ -96,7 +96,7 @@ export default function Favourites() {
                                                 onClick={(e) => removeFavorite(e, r.id)}
                                                 className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 backdrop-blur flex items-center justify-center border border-white/20 transition-all hover:scale-110 hover:bg-black/80 z-10"
                                             >
-                                                <span className="text-brand-500 text-lg drop-shadow-[0_0_5px_rgba(255,107,107,0.5)]">♥</span>
+                                                <span className="text-brand-500 text-lg drop-shadow-[0_0_5px_#ff6b6b80]">♥</span>
                                             </button>
                                         </div>
                                         <div className="p-4">

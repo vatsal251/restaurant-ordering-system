@@ -28,10 +28,19 @@ router.get('/menu', authenticate, requireRole('restaurant_owner'), async (req, r
 router.post('/menu', authenticate, requireRole('restaurant_owner'), async (req, res) => {
     try {
         const restaurant = await getRestaurant(req.user.id)
-        const { name, description, price, category, isAvailable } = req.body
+        const { name, description, price, category, isAvailable, imageUrl, isVeg, moodTags } = req.body
         if (!name || !price) return res.status(400).json({ message: 'Name and price are required' })
         const item = await prisma.menuItem.create({
-            data: { restaurantId: restaurant.id, name, description, price: parseFloat(price), category, isAvailable: isAvailable ?? true }
+            data: {
+                restaurantId: restaurant.id,
+                name, description,
+                price: parseFloat(price),
+                category,
+                isAvailable: isAvailable ?? true,
+                imageUrl,
+                isVeg: isVeg ?? true,
+                moodTags: moodTags || []
+            }
         })
         res.status(201).json(item)
     } catch (err) { res.status(err.status || 500).json({ message: err.message }) }
@@ -41,13 +50,21 @@ router.post('/menu', authenticate, requireRole('restaurant_owner'), async (req, 
 router.put('/menu/:id', authenticate, requireRole('restaurant_owner'), async (req, res) => {
     try {
         const restaurant = await getRestaurant(req.user.id)
-        const { name, description, price, category, isAvailable } = req.body
+        const { name, description, price, category, isAvailable, imageUrl, isVeg, moodTags } = req.body
         // Verify item belongs to this restaurant
         const existing = await prisma.menuItem.findFirst({ where: { id: req.params.id, restaurantId: restaurant.id } })
         if (!existing) return res.status(404).json({ message: 'Item not found' })
         const item = await prisma.menuItem.update({
             where: { id: req.params.id },
-            data: { name, description, price: parseFloat(price), category, isAvailable }
+            data: {
+                name, description,
+                price: parseFloat(price),
+                category,
+                isAvailable,
+                imageUrl,
+                isVeg,
+                moodTags
+            }
         })
         res.json(item)
     } catch (err) { res.status(err.status || 500).json({ message: err.message }) }
@@ -78,10 +95,17 @@ router.get('/profile', authenticate, requireRole('restaurant_owner'), async (req
 // PATCH /api/restaurant/profile — update restaurant info
 router.patch('/profile', authenticate, requireRole('restaurant_owner'), async (req, res) => {
     try {
-        const { name, address, cuisineType, isOpen } = req.body
+        const { name, address, cuisineType, isOpen, imageUrl, costForTwo, deliveryTime, isVegOnly, fssaiLicense } = req.body
         const restaurant = await prisma.restaurant.update({
             where: { ownerId: req.user.id },
-            data: { name, address, cuisineType, isOpen }
+            data: {
+                name, address, cuisineType, isOpen,
+                imageUrl,
+                costForTwo: costForTwo ? parseInt(costForTwo) : undefined,
+                deliveryTime: deliveryTime ? parseInt(deliveryTime) : undefined,
+                isVegOnly,
+                fssaiLicense
+            }
         })
         res.json(restaurant)
     } catch (err) { res.status(500).json({ message: err.message }) }

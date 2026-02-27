@@ -4,7 +4,7 @@ import api from '../lib/api'
 const CATEGORIES = ['Starters', 'Main Course', 'Breads', 'Rice', 'Desserts', 'Beverages', 'Sides']
 const MOOD_OPTIONS = ['comforting', 'healthy', 'spicy', 'sweet', 'cheat', 'light']
 
-const emptyForm = { name: '', description: '', price: '', category: '', isAvailable: true, isVeg: true, moodTags: [] }
+const emptyForm = { name: '', description: '', price: '', category: '', isAvailable: true, isVeg: true, moodTags: [], imageUrl: '' }
 
 export default function Menu() {
     const [items, setItems] = useState([])
@@ -15,6 +15,22 @@ export default function Menu() {
     const [saving, setSaving] = useState(false)
     const [deletingId, setDeletingId] = useState(null)
     const [filterCat, setFilterCat] = useState('All')
+    const [uploadingImage, setUploadingImage] = useState(false)
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        const formData = new FormData()
+        formData.append('image', file)
+        setUploadingImage(true)
+        try {
+            const { data } = await api.post('/api/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            })
+            setForm(f => ({ ...f, imageUrl: data.imageUrl }))
+        } catch { alert('Image upload failed') }
+        finally { setUploadingImage(false) }
+    }
 
     const fetchMenu = async () => {
         try {
@@ -35,7 +51,8 @@ export default function Menu() {
             category: item.category || '',
             isAvailable: item.isAvailable,
             isVeg: item.isVeg !== false,
-            moodTags: item.moodTags || []
+            moodTags: item.moodTags || [],
+            imageUrl: item.imageUrl || ''
         })
         setEditId(item.id)
         setShowForm(true)
@@ -140,6 +157,11 @@ export default function Menu() {
                         {filtered.map(item => (
                             <div key={item.id} id={`menu-item-${item.id}`}
                                 className={`card flex items-center gap-3 ${!item.isAvailable ? 'opacity-50' : ''}`}>
+                                {item.imageUrl && (
+                                    <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-white/10">
+                                        <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                                    </div>
+                                )}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
                                         <span className={`inline-flex items-center justify-center w-4 h-4 border-2 rounded-sm shrink-0 mr-1 ${item.isVeg !== false ? 'border-green-500' : 'border-red-500'}`}>
@@ -193,6 +215,16 @@ export default function Menu() {
                                 <input className="input" placeholder="Short description" value={form.description}
                                     onChange={e => setForm({ ...form, description: e.target.value })} />
                             </div>
+                            <div>
+                                <label className="text-xs text-gray-400 mb-1 block">Image</label>
+                                <div className="flex flex-col gap-2">
+                                    <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage}
+                                        className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-500/20 file:text-brand-400 hover:file:bg-brand-500/30" />
+                                    {uploadingImage && <span className="text-xs text-brand-400 animate-pulse">Uploading...</span>}
+                                    <input className="input" placeholder="Or paste image URL" value={form.imageUrl}
+                                        onChange={e => setForm({ ...form, imageUrl: e.target.value })} />
+                                </div>
+                            </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="text-xs text-gray-400 mb-1 block">Price (₹) *</label>
@@ -235,8 +267,8 @@ export default function Menu() {
                                                 setForm({ ...form, moodTags: tags })
                                             }}
                                             className={`text-xs px-2.5 py-1 rounded-full border transition-colors capitalize ${form.moodTags.includes(mood)
-                                                    ? 'bg-brand-500/20 border-brand-500 text-brand-400'
-                                                    : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
+                                                ? 'bg-brand-500/20 border-brand-500 text-brand-400'
+                                                : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
                                                 }`}
                                         >
                                             {mood === 'cheat' ? 'cheat meal' : mood}
