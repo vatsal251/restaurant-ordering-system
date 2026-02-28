@@ -1,27 +1,38 @@
 import { Router } from 'express'
 import { PrismaClient } from '@prisma/client'
 import multer from 'multer'
-import { v2 as cloudinary } from 'cloudinary'
+import fs from 'fs'
+import path from 'path'
 import { authenticate } from '../middlewares/auth.js'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const router = Router()
 const prisma = new PrismaClient()
-const upload = multer({ storage: multer.memoryStorage() })
 
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
+// Ensure uploads directory exists
+const uploadDir = path.join(__dirname, '..', '..', 'uploads')
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true })
+}
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadDir)
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+        cb(null, 'seal-' + uniqueSuffix + path.extname(file.originalname))
+    }
 })
 
-// Helper: upload buffer to Cloudinary
-const uploadToCloudinary = (buffer, folder) => {
-    return new Promise((resolve, reject) => {
-        cloudinary.uploader.upload_stream(
-            { folder, resource_type: 'image' },
-            (err, result) => err ? reject(err) : resolve(result.secure_url)
-        ).end(buffer)
-    })
+const upload = multer({ storage })
+
+// Helper: construct public URL
+const getFileUrl = (filename) => {
+    return `http://localhost:${process.env.PORT || 3000}/uploads/${filename}`
 }
 
 // Ensure SealVerification record exists for an order
@@ -39,7 +50,7 @@ router.post('/:orderId/dispatch', authenticate, upload.single('photo'), async (r
         const { orderId } = req.params
         if (!req.file) return res.status(400).json({ message: 'No photo uploaded' })
 
-        const photoUrl = await uploadToCloudinary(req.file.buffer, `seal/${orderId}`)
+        const photoUrl = getFileUrl(req.file.filename)
         await ensureSealRecord(orderId)
         const record = await prisma.sealVerification.update({
             where: { orderId },
@@ -62,7 +73,7 @@ router.post('/:orderId/pickup', authenticate, upload.single('photo'), async (req
         const { orderId } = req.params
         if (!req.file) return res.status(400).json({ message: 'No photo uploaded' })
 
-        const photoUrl = await uploadToCloudinary(req.file.buffer, `seal/${orderId}`)
+        const photoUrl = getFileUrl(req.file.filename)
         await ensureSealRecord(orderId)
         const record = await prisma.sealVerification.update({
             where: { orderId },
@@ -83,7 +94,7 @@ router.post('/:orderId/customer', authenticate, upload.single('photo'), async (r
         const { orderId } = req.params
         if (!req.file) return res.status(400).json({ message: 'No photo uploaded' })
 
-        const photoUrl = await uploadToCloudinary(req.file.buffer, `seal/${orderId}`)
+        const photoUrl = getFileUrl(req.file.filename)
         await ensureSealRecord(orderId)
         const record = await prisma.sealVerification.update({
             where: { orderId },

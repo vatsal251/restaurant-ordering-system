@@ -24,13 +24,14 @@ model User {
   createdAt    DateTime @default(now())
 
   // Relations
-  customerOrders Order[]        @relation("CustomerOrders")
-  deliveryOrders Order[]        @relation("DeliveryOrders")
-  restaurant     Restaurant?
-  reviews        Review[]
-  notifications  Notification[]
-  favorites      Favorite[]
-  addresses      Address[]
+  customerOrders    Order[]        @relation("CustomerOrders")
+  deliveryOrders    Order[]        @relation("DeliveryOrders")
+  restaurant        Restaurant?
+  reviews           Review[]
+  notifications     Notification[]
+  favorites         Favorite[]
+  addresses         Address[]
+  hostedGroupOrders GroupOrder[]   @relation("HostGroupOrders")
 
   @@map("users")
 }
@@ -43,27 +44,27 @@ enum Role {
 }
 
 model Restaurant {
-  id          String   @id @default(cuid())
-  ownerId     String   @unique
-  owner       User     @relation(fields: [ownerId], references: [id])
+  id          String  @id @default(cuid())
+  ownerId     String  @unique
+  owner       User    @relation(fields: [ownerId], references: [id])
   name        String
   address     String
   lat         Float?
   lng         Float?
   cuisineType String?
-  rating      Float    @default(4.0)
-  isOpen      Boolean  @default(true)
-  isApproved  Boolean  @default(true)
+  rating      Float   @default(4.0)
+  isOpen      Boolean @default(true)
+  isApproved  Boolean @default(true)
   imageUrl    String?
 
   // Extra features for Discovery/Parity
-  isPromoted  Boolean  @default(false)
-  costForTwo  Int      @default(500)
+  isPromoted   Boolean @default(false)
+  costForTwo   Int     @default(500)
   deliveryTime Int     @default(30)
-  isVegOnly   Boolean  @default(false)
+  isVegOnly    Boolean @default(false)
   fssaiLicense String?
 
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
 
   menuItems   MenuItem[]
   orders      Order[]
@@ -99,7 +100,7 @@ model Address {
   lng       Float?
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
-  
+
   @@map("addresses")
 }
 
@@ -118,7 +119,8 @@ model MenuItem {
   moodTags     String[]   @default([])
   createdAt    DateTime   @default(now())
 
-  orderItems OrderItem[]
+  orderItems      OrderItem[]
+  groupOrderItems GroupOrderItem[]
 
   @@map("menu_items")
 }
@@ -281,4 +283,36 @@ model PromoCode {
 enum PromoType {
   percentage
   flat
+}
+
+model GroupOrder {
+  id           String           @id @default(cuid())
+  hostId       String
+  host         User             @relation("HostGroupOrders", fields: [hostId], references: [id])
+  status       GroupOrderStatus @default(active)
+  createdAt    DateTime         @default(now())
+
+  items GroupOrderItem[]
+
+  @@map("group_orders")
+}
+
+model GroupOrderItem {
+  id              String     @id @default(cuid())
+  groupOrderId    String
+  groupOrder      GroupOrder @relation(fields: [groupOrderId], references: [id], onDelete: Cascade)
+  menuItemId      String
+  menuItem        MenuItem   @relation(fields: [menuItemId], references: [id])
+  participantName String
+  quantity        Int
+  price           Float
+
+  @@map("group_order_items")
+}
+
+enum GroupOrderStatus {
+  active
+  locked
+  completed
+  cancelled
 }

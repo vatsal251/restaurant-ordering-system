@@ -136,7 +136,6 @@ export default function SealVerify() {
                     <button
                         id="capture-btn"
                         onClick={capturePhoto}
-                        disabled={!streamRef.current?.active}
                         className="w-20 h-20 rounded-full bg-white border-4 border-brand-500 active:scale-95 transition-transform disabled:opacity-50"
                     />
 

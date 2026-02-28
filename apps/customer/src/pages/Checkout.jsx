@@ -7,7 +7,7 @@ import confetti from 'canvas-confetti'
 
 export default function Checkout() {
     const navigate = useNavigate()
-    const { items, restaurantId, restaurantName, totalPrice, clearCart } = useCartStore()
+    const { items, totalPrice, clearCart } = useCartStore()
     const { user } = useAuthStore()
 
     const [address, setAddress] = useState(user?.address || '')
@@ -74,7 +74,9 @@ export default function Checkout() {
         if (!promoCode.trim()) return
         setPromoError(''); setAppliedPromo(null)
         try {
-            const { data } = await api.post('/api/orders/validate-promo', { code: promoCode, restaurantId })
+            // For multi-restaurant, we omit restaurantId check for global promos, or pick the first item's restaurant.
+            // Simplified: don't pass restaurantId to allow only global promos or those valid for the cart.
+            const { data } = await api.post('/api/orders/validate-promo', { code: promoCode })
             setAppliedPromo(data)
 
             // Gamification: Trigger confetti!
@@ -95,21 +97,20 @@ export default function Checkout() {
         try {
             // 1. Create order in backend → get Razorpay order id
             const { data: orderData } = await api.post('/api/orders', {
-                restaurantId,
                 deliveryAddress: address,
                 phone,
                 instructions,
                 cookingInstructions,
                 tipAmount: Number(tipAmount),
                 promoCodeId: appliedPromo?.id,
-                items: items.map(i => ({ menuItemId: i.id, quantity: i.quantity, unitPrice: i.price })),
+                items: items.map(i => ({ menuItemId: i.id, quantity: i.quantity, unitPrice: i.price, restaurantId: i.restaurantId })),
                 totalAmount: grandTotal,
                 paymentMethod: paymentMethod === 'cod' ? 'cod' : 'razorpay',
             })
 
             if (paymentMethod === 'cod') {
                 clearCart()
-                navigate(`/orders/${orderData.order.id}`)
+                navigate(orderData.orders.length > 1 ? '/orders' : `/orders/${orderData.orders[0].id}`)
                 return
             }
 
@@ -119,19 +120,19 @@ export default function Checkout() {
                 amount: orderData.razorpayOrder.amount,
                 currency: 'INR',
                 name: 'FoodRush',
-                description: `Order from ${restaurantName}`,
+                description: `Order from ${orderData.orders.length > 1 ? 'Multiple Restaurants' : 'Restaurant'}`,
                 order_id: orderData.razorpayOrder.id,
                 handler: async (response) => {
                     try {
                         // 3. Verify payment on backend
                         await api.post('/api/orders/verify-payment', {
-                            orderId: orderData.order.id,
+                            orderId: orderData.orders.map(o => o.id),
                             razorpayPaymentId: response.razorpay_payment_id,
                             razorpayOrderId: response.razorpay_order_id,
                             razorpaySignature: response.razorpay_signature,
                         })
                         clearCart()
-                        navigate(`/orders/${orderData.order.id}`)
+                        navigate(orderData.orders.length > 1 ? '/orders' : `/orders/${orderData.orders[0].id}`)
                     } catch {
                         setError('Payment verification failed. Contact support.')
                     }
@@ -255,10 +256,13 @@ export default function Checkout() {
 
                 {/* Order Summary */}
                 <div className="card space-y-3">
-                    <h2 className="font-semibold flex items-center gap-2">🧾 Order from {restaurantName}</h2>
+                    <h2 className="font-semibold flex items-center gap-2">🧾 Order Overview</h2>
                     {items.map(i => (
                         <div key={i.id} className="flex justify-between text-sm">
-                            <span className="text-gray-300">{i.quantity}× {i.name}</span>
+                            <div className="flex flex-col">
+                                <span className="text-gray-300">{i.quantity}× {i.name}</span>
+                                <span className="text-[10px] text-gray-500">{i.restaurantName}</span>
+                            </div>
                             <span>₹{(i.price * i.quantity).toFixed(2)}</span>
                         </div>
                     ))}

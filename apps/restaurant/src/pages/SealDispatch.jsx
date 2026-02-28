@@ -71,8 +71,9 @@ export default function SealDispatch() {
                 headers: { 'Content-Type': 'multipart/form-data' }
             })
             setStep('done')
-        } catch {
-            alert('Upload failed. Please try again.')
+        } catch (error) {
+            console.error('Upload error:', error)
+            alert(`Upload failed: ${error.response?.data?.message || error.message}. Please try again.`)
         } finally {
             setLoading(false)
         }

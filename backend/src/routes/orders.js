@@ -89,15 +89,19 @@ router.post('/verify-payment', authenticate, async (req, res) => {
             return res.status(400).json({ message: 'Payment verification failed' })
         }
 
-        await prisma.payment.update({
-            where: { orderId },
-            data: { status: 'paid', razorpayPaymentId },
-        })
-        await prisma.order.update({
-            where: { id: orderId },
-            data: { paymentStatus: 'paid' },
-        })
-        res.json({ message: 'Payment verified', orderId })
+        const ids = Array.isArray(orderId) ? orderId : [orderId]
+
+        for (const id of ids) {
+            await prisma.payment.updateMany({
+                where: { orderId: id },
+                data: { status: 'paid', razorpayPaymentId },
+            })
+            await prisma.order.update({
+                where: { id: id },
+                data: { paymentStatus: 'paid' },
+            })
+        }
+        res.json({ message: 'Payment verified', orderIds: ids })
     } catch (err) {
         console.error(err)
         res.status(500).json({ message: 'Server error' })
@@ -133,38 +137,62 @@ router.post('/validate-promo', authenticate, async (req, res) => {
 // POST /api/orders — Place a new order
 router.post('/', authenticate, requireRole('customer'), async (req, res) => {
     try {
-        const { restaurantId, deliveryAddress, phone, instructions, items, totalAmount, paymentMethod, tipAmount, cookingInstructions, deliveryInstructions, promoCodeId } = req.body
+        const { deliveryAddress, phone, instructions, items, totalAmount, paymentMethod, tipAmount, cookingInstructions, deliveryInstructions, promoCodeId } = req.body
 
-        if (!restaurantId || !deliveryAddress || !items?.length) {
-            return res.status(400).json({ message: 'restaurantId, deliveryAddress, and items are required' })
+        if (!deliveryAddress || !items?.length) {
+            return res.status(400).json({ message: 'deliveryAddress and items are required' })
         }
 
-        // Create order in DB
-        const order = await prisma.order.create({
-            data: {
-                customerId: req.user.id,
-                restaurantId,
-                deliveryAddress,
-                totalAmount,
-                tipAmount: tipAmount ? parseFloat(tipAmount) : 0.0,
-                cookingInstructions,
-                deliveryInstructions: deliveryInstructions || instructions,
-                promoCodeId,
-                paymentStatus: 'pending',
-                status: 'placed',
-                orderItems: {
-                    create: items.map(i => ({
-                        menuItemId: i.menuItemId,
-                        quantity: i.quantity,
-                        unitPrice: i.unitPrice,
-                    })),
+        // Group items by restaurant
+        const itemsByRestaurant = {}
+        for (const i of items) {
+            if (!itemsByRestaurant[i.restaurantId]) itemsByRestaurant[i.restaurantId] = []
+            itemsByRestaurant[i.restaurantId].push(i)
+        }
+
+        const numRestaurants = Object.keys(itemsByRestaurant).length
+        const createdOrders = []
+
+        const combinedSubtotal = items.reduce((s, i) => s + (i.unitPrice * i.quantity), 0)
+        const extraFees = totalAmount - combinedSubtotal
+        let isFirstOrder = true
+
+        // Create an order for each restaurant
+        for (const [rId, rItems] of Object.entries(itemsByRestaurant)) {
+            const rSubtotal = rItems.reduce((s, i) => s + (i.unitPrice * i.quantity), 0)
+            const rTotal = isFirstOrder ? rSubtotal + extraFees : rSubtotal
+            isFirstOrder = false
+
+            const order = await prisma.order.create({
+                data: {
+                    customerId: req.user.id,
+                    restaurantId: rId,
+                    deliveryAddress,
+                    totalAmount: rTotal,
+                    tipAmount: tipAmount ? parseFloat(tipAmount) / numRestaurants : 0.0,
+                    cookingInstructions,
+                    deliveryInstructions: deliveryInstructions || instructions,
+                    promoCodeId,
+                    paymentStatus: 'pending',
+                    status: 'placed',
+                    orderItems: {
+                        create: rItems.map(i => ({
+                            menuItemId: i.menuItemId,
+                            quantity: i.quantity,
+                            unitPrice: i.unitPrice,
+                        })),
+                    },
                 },
-            },
-            include: {
-                orderItems: { include: { menuItem: { select: { name: true } } } },
-                restaurant: { select: { name: true } },
-            },
-        })
+                include: {
+                    orderItems: { include: { menuItem: { select: { name: true } } } },
+                    restaurant: { select: { name: true } },
+                },
+            })
+
+            await prisma.sealVerification.create({ data: { orderId: order.id } })
+            createdOrders.push(order)
+            req.io?.emit('NEW_ORDER', { orderId: order.id, restaurantId: rId })
+        }
 
         // Increment promo code usage if applicable
         if (promoCodeId) {
@@ -174,25 +202,21 @@ router.post('/', authenticate, requireRole('customer'), async (req, res) => {
             }).catch(e => console.error('Failed to update promo code uses:', e))
         }
 
-        // Create SealVerification record placeholder
-        await prisma.sealVerification.create({ data: { orderId: order.id } })
-
         let razorpayOrder = null
         if (paymentMethod !== 'cod') {
             razorpayOrder = await razorpay.orders.create({
                 amount: Math.round(totalAmount * 100),
                 currency: 'INR',
-                receipt: order.id,
+                receipt: createdOrders[0].id,
             })
-            await prisma.payment.create({
-                data: { orderId: order.id, amount: totalAmount, status: 'pending', razorpayPaymentId: razorpayOrder.id }
-            })
+            for (const o of createdOrders) {
+                await prisma.payment.create({
+                    data: { orderId: o.id, amount: o.totalAmount, status: 'pending', razorpayPaymentId: razorpayOrder.id }
+                })
+            }
         }
 
-        // Notify restaurant via socket
-        req.io?.emit('NEW_ORDER', { orderId: order.id, restaurantId })
-
-        res.status(201).json({ order, razorpayOrder })
+        res.status(201).json({ orders: createdOrders, razorpayOrder })
     } catch (err) {
         console.error('Order creation error:', err)
         res.status(500).json({ message: err.message || 'Failed to place order' })

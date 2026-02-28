@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useCartStore } from '../store/cartStore'
+import { useGroupOrderStore } from '../store/groupOrderStore'
+import { toast } from 'react-hot-toast'
 import api from '../lib/api'
 
 const VEG_DOT = ({ isVeg }) => (
@@ -20,6 +22,8 @@ export default function RestaurantPage() {
     const [isFav, setIsFav] = useState(false)
     const [showInfo, setShowInfo] = useState(false)
     const { items: cartItems, addItem, updateQuantity, totalPrice } = useCartStore()
+    const { activeGroupId, participantName } = useGroupOrderStore()
+    const navigate = useNavigate()
     const user = api.defaults.headers.common['Authorization'] ? true : false // rough check if logged in
 
     useEffect(() => {
@@ -58,6 +62,27 @@ export default function RestaurantPage() {
         const matchSearch = !searchQuery || item.name.toLowerCase().includes(searchQuery.toLowerCase())
         return matchCat && matchVeg && matchSearch
     })
+
+    const handleAddItem = async (item) => {
+        if (activeGroupId && participantName) {
+            try {
+                // Add to Global Group Order
+                toast.loading(`Adding ${item.name} to Group Order...`, { id: 'add-group' })
+                await api.post(`/api/group-orders/${activeGroupId}/items`, {
+                    menuItemId: item.id,
+                    participantName,
+                    quantity: 1,
+                    price: item.price
+                })
+                toast.success('Added to Group Order!', { id: 'add-group' })
+            } catch (error) {
+                toast.error(error.response?.data?.message || 'Failed to add item to Group Order', { id: 'add-group' })
+            }
+        } else {
+            // Local Cart
+            addItem({ ...item, restaurantId: id, restaurantName: restaurant.name })
+        }
+    }
 
     // Group: recommended (top items shown first)
     const recommended = menu.filter(i => i.isAvailable !== false).slice(0, 3)
@@ -195,13 +220,13 @@ export default function RestaurantPage() {
                                         <button onClick={() => updateQuantity(item.id, getItemQty(item.id) - 1)}
                                             className="w-7 h-7 rounded-full bg-brand-500/20 text-brand-500 flex items-center justify-center font-bold hover:bg-brand-500/40">−</button>
                                         <span className="font-semibold w-4 text-center text-sm">{getItemQty(item.id)}</span>
-                                        <button id={`add-${item.id}`} onClick={() => addItem({ ...item, restaurantId: id })}
+                                        <button id={`add-${item.id}`} onClick={() => handleAddItem(item)}
                                             className="w-7 h-7 rounded-full bg-brand-500 text-white flex items-center justify-center font-bold hover:bg-brand-600">+</button>
                                     </div>
                                 ) : (
                                     <button
                                         id={`add-${item.id}`}
-                                        onClick={() => item.isAvailable !== false && addItem({ ...item, restaurantId: id })}
+                                        onClick={() => item.isAvailable !== false && handleAddItem(item)}
                                         disabled={item.isAvailable === false}
                                         className="btn-primary text-sm px-3 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
                                     >
@@ -216,9 +241,9 @@ export default function RestaurantPage() {
 
             {/* Floating cart bar */}
             {cartCount > 0 && (
-                <Link to="/cart" className="fixed bottom-6 left-4 right-4 bg-brand-500 hover:bg-brand-600 text-white font-semibold px-5 py-4 rounded-2xl flex items-center justify-between shadow-lg shadow-brand-500/30 transition-colors z-50">
+                <Link to={activeGroupId ? `/group-order/${activeGroupId}` : "/cart"} className={`fixed bottom-6 left-4 right-4 ${activeGroupId ? 'bg-green-600 hover:bg-green-500 shadow-green-500/30' : 'bg-brand-500 hover:bg-brand-600 shadow-brand-500/30'} text-white font-semibold px-5 py-4 rounded-2xl flex items-center justify-between shadow-lg transition-colors z-50`}>
                     <span className="bg-white/20 px-2 py-0.5 rounded-lg text-sm">{cartCount} item{cartCount > 1 ? 's' : ''}</span>
-                    <span>View Cart →</span>
+                    <span>{activeGroupId ? 'View Group Cart →' : 'View Cart →'}</span>
                     <span>₹{totalPrice().toFixed(0)}</span>
                 </Link>
             )}

@@ -7,29 +7,16 @@ export const useCartStore = create()(
     persist(
         (set, get) => ({
             items: [],
-            restaurantId: null,
-            restaurantName: '',
 
-            // Add item — clears cart if from a different restaurant
+            // Add item — allows items from multiple restaurants
             addItem: (item) => {
-                const { items, restaurantId } = get()
-                if (restaurantId && restaurantId !== item.restaurantId) {
-                    // Different restaurant — reset cart
-                    set({
-                        items: [{ ...item, quantity: 1 }],
-                        restaurantId: item.restaurantId,
-                        restaurantName: item.restaurantName,
-                    })
-                    return { switched: true }
-                }
+                const { items } = get()
                 const existing = items.find(i => i.id === item.id)
                 if (existing) {
                     set({ items: items.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i) })
                 } else {
                     set({
-                        items: [...items, { ...item, quantity: 1 }],
-                        restaurantId: item.restaurantId,
-                        restaurantName: item.restaurantName,
+                        items: [...items, { ...item, quantity: 1 }]
                     })
                 }
                 return { switched: false }
@@ -46,7 +33,7 @@ export const useCartStore = create()(
                 }
             },
 
-            clearCart: () => set({ items: [], restaurantId: null, restaurantName: '' }),
+            clearCart: () => set({ items: [] }),
 
             // Computed
             totalItems: () => get().items.reduce((s, i) => s + i.quantity, 0),

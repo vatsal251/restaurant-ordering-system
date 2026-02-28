@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
+import { useGroupOrderStore } from '../store/groupOrderStore'
+import { toast } from 'react-hot-toast'
 import api from '../lib/api'
 
 const CUISINE_EMOJI = {
@@ -32,6 +34,7 @@ export default function Home() {
     }
     const mealRec = getMealRecommendation()
     const { user, logout } = useAuthStore()
+    const { activeGroupId } = useGroupOrderStore()
     const [restaurants, setRestaurants] = useState([])
     const [search, setSearch] = useState('')
     const [cuisine, setCuisine] = useState('All')
@@ -39,6 +42,8 @@ export default function Home() {
     const [showOpen, setShowOpen] = useState(false)
     const [loading, setLoading] = useState(true)
     const [offerIdx, setOfferIdx] = useState(0)
+    const [creatingGroup, setCreatingGroup] = useState(false)
+    const navigate = useNavigate()
 
     const cuisines = ['All', 'Pizza', 'Burger', 'Biryani', 'Chinese', 'South Indian', 'Desserts', 'Rolls']
 
@@ -79,6 +84,20 @@ export default function Home() {
             else await api.post('/api/customer/favorites', { restaurantId: id })
         } catch {
             setFavorites(favorites) // revert on fail
+        }
+    }
+
+    const startGroupOrder = async () => {
+        setCreatingGroup(true)
+        try {
+            const res = await api.post('/api/group-orders', {}) // No restaurantId needed
+            console.log("Create Group Order Response:", res)
+            console.log("Navigating to:", `/group-order/${res.data.id}`)
+            toast.success('Group Order created! Share the link.')
+            navigate(`/group-order/${res.data.id}`)
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to start group order')
+            setCreatingGroup(false)
         }
     }
 
@@ -167,6 +186,18 @@ export default function Home() {
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-500 font-bold">| 🎙️</span>
                 </Link>
 
+                {/* AI Assistant Feature Link */}
+                <Link to="/ai-assistant" className="block mt-3 bg-gradient-to-r from-purple-600 to-brand-500 rounded-xl p-4 text-white hover:scale-[1.02] transition-transform shadow-[0_0_15px_rgba(168,85,247,0.3)] border border-white/20 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20"></div>
+                    <div className="flex justify-between items-center relative z-10">
+                        <div>
+                            <h3 className="font-bold text-lg flex items-center gap-1">Ask AI Dietitian ✨</h3>
+                            <p className="text-sm text-white/90 mt-0.5">Find high protein, low budget meals instantly</p>
+                        </div>
+                        <span className="text-3xl drop-shadow-md">🤖</span>
+                    </div>
+                </Link>
+
                 {/* Surprise Me Feature Link */}
                 <Link to="/surprise" className="block mt-3 bg-gradient-to-r from-orange-600 to-yellow-500 rounded-xl p-4 text-white hover:scale-[1.02] transition-transform shadow-[0_0_15px_rgba(249,115,22,0.3)] border border-white/20">
                     <div className="flex justify-between items-center">
@@ -180,15 +211,33 @@ export default function Home() {
 
                 {/* Quick actions: Orders & Cart */}
                 {user && (
-                    <div className="grid grid-cols-2 gap-3 mt-3">
-                        <Link to="/orders" className="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center justify-center gap-2 hover:bg-white/10 transition-colors">
-                            <span>🧾</span>
-                            <span className="font-semibold text-sm">My Orders</span>
-                        </Link>
-                        <Link to="/cart" className="bg-brand-500/10 border border-brand-500/20 text-brand-500 rounded-xl p-3 flex items-center justify-center gap-2 hover:bg-brand-500/20 transition-colors">
-                            <span>🛒</span>
-                            <span className="font-semibold text-sm">Cart</span>
-                        </Link>
+                    <div className="flex flex-col gap-3 mt-3">
+                        <div className="grid grid-cols-2 gap-3">
+                            <Link to="/orders" className="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center justify-center gap-2 hover:bg-white/10 transition-colors">
+                                <span>🧾</span>
+                                <span className="font-semibold text-sm">My Orders</span>
+                            </Link>
+                            {activeGroupId ? (
+                                <Link to={`/group-order/${activeGroupId}`} className="bg-green-500/10 border border-green-500/30 text-green-400 rounded-xl p-3 flex items-center justify-center gap-2 hover:bg-green-500/20 transition-colors">
+                                    <span className="animate-pulse">🟢</span>
+                                    <span className="font-semibold text-sm">Group Cart</span>
+                                </Link>
+                            ) : (
+                                <Link to="/cart" className="bg-brand-500/10 border border-brand-500/20 text-brand-500 rounded-xl p-3 flex items-center justify-center gap-2 hover:bg-brand-500/20 transition-colors">
+                                    <span>🛒</span>
+                                    <span className="font-semibold text-sm">Cart</span>
+                                </Link>
+                            )}
+                        </div>
+                        {activeGroupId ? (
+                            <Link to={`/group-order/${activeGroupId}`} className="w-full bg-blue-600/20 border border-blue-500/30 text-blue-400 font-bold rounded-xl p-3 flex items-center justify-center gap-2 hover:bg-blue-600/30 transition-colors">
+                                👥 Return to Active Group Order
+                            </Link>
+                        ) : (
+                            <button onClick={startGroupOrder} disabled={creatingGroup} className="w-full bg-blue-600/20 border border-blue-500/30 text-blue-400 font-bold rounded-xl p-3 flex items-center justify-center gap-2 hover:bg-blue-600/30 transition-colors">
+                                {creatingGroup ? <span className="animate-spin">⏳</span> : '👥 Start a Global Group Order'}
+                            </button>
+                        )}
                     </div>
                 )}
             </div>

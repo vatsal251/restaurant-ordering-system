@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCartStore } from '../store/cartStore'
+import { useGroupOrderStore } from '../store/groupOrderStore'
 import confetti from 'canvas-confetti'
 
 const VALID_COUPONS = {
@@ -10,23 +11,38 @@ const VALID_COUPONS = {
 }
 
 export default function Cart() {
-    const { items, restaurantName, updateQuantity, removeItem, clearCart, totalPrice } = useCartStore()
+    const { items, updateQuantity, removeItem, clearCart, totalPrice } = useCartStore()
+    const { activeGroupId } = useGroupOrderStore()
     const navigate = useNavigate()
     const [coupon, setCoupon] = useState('')
     const [appliedCoupon, setAppliedCoupon] = useState(null)
     const [couponError, setCouponError] = useState('')
     const [addDonation, setAddDonation] = useState(false)
 
+    // Group items by restaurant
+    const groupedItems = items.reduce((acc, item) => {
+        const rName = item.restaurantName || 'Unknown Restaurant'
+        if (!acc[rName]) acc[rName] = []
+        acc[rName].push(item)
+        return acc
+    }, {})
+
+    const numRestaurants = Object.keys(groupedItems).length
+
+    // Free delivery above ₹299
     const subtotal = totalPrice()
+
     // Dynamic Pricing / Surge Fee
     const currentHour = new Date().getHours()
     const isSurgeHour = (currentHour >= 12 && currentHour <= 14) || (currentHour >= 19 && currentHour <= 21)
     const surgeFee = isSurgeHour && items.length > 0 ? 25 : 0
-
-    // Free delivery above ₹299
-    const deliveryFee = (items.length > 0 && subtotal < 299) ? 40 : 0
+    let deliveryFee = 0;
+    if (items.length > 0 && subtotal < 299) {
+        // Base ₹40 + ₹20 for each additional restaurant due to extra distance
+        deliveryFee = 40 + ((numRestaurants - 1) * 20);
+    }
     const platformFee = items.length > 0 ? 4 : 0
-    const packagingFee = items.length > 0 ? 15 : 0
+    const packagingFee = items.length > 0 ? 15 * numRestaurants : 0
     const donation = addDonation ? 2 : 0
     const taxes = Math.round(subtotal * 0.05)
     const amountForFreeDelivery = Math.max(0, 299 - subtotal)
@@ -55,8 +71,21 @@ export default function Cart() {
         if (appliedCoupon.flat) discount = appliedCoupon.flat
         else discount = Math.min(subtotal * appliedCoupon.discount, appliedCoupon.max)
     }
-
     const grandTotal = Math.max(0, subtotal + deliveryFee + platformFee + packagingFee + surgeFee + taxes + donation - discount)
+
+    if (activeGroupId) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center gap-4 bg-[#0f0f0f]">
+                <div className="text-7xl animate-pulse mb-2">👥</div>
+                <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-brand-500">Group Order Active!</h1>
+                <p className="text-gray-400 max-w-sm">You are currently participating in a Group Order. The regular cart is disabled until the group order is completed or left.</p>
+                <Link to={`/group-order/${activeGroupId}`} className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-xl mt-4 shadow-lg transition-transform hover:scale-105 flex items-center gap-2">
+                    <span>Return to Shared Cart</span>
+                    <span>➔</span>
+                </Link>
+            </div>
+        )
+    }
 
     if (items.length === 0) {
         return (
@@ -76,47 +105,64 @@ export default function Cart() {
                 <button onClick={() => navigate(-1)} className="text-xl">←</button>
                 <div>
                     <h1 className="font-bold text-lg">Your Cart</h1>
-                    <p className="text-gray-400 text-xs">{restaurantName}</p>
+                    <p className="text-gray-400 text-xs">Multi-Restaurant Global Cart</p>
                 </div>
             </div>
 
             <div className="px-4 pt-4 space-y-4">
-                {/* Free Delivery Progress */}
+                {/* Combined Delivery Progress */}
                 <div className="card bg-gradient-to-r from-brand-500/10 to-transparent border-brand-500/20 p-4">
                     <div className="flex justify-between items-end mb-2">
                         <div>
                             <h3 className="font-bold text-sm text-brand-400">
-                                {amountForFreeDelivery > 0 ? `Add ₹${amountForFreeDelivery.toFixed(0)} more for Free Delivery` : '🎉 You unlocked Free Delivery!'}
+                                {numRestaurants > 1
+                                    ? `Combined Order from ${numRestaurants} places`
+                                    : amountForFreeDelivery > 0 ? `Add ₹${amountForFreeDelivery.toFixed(0)} more for Free Delivery` : '🎉 You unlocked Free Delivery!'}
                             </h3>
-                            <p className="text-xs text-gray-400 mt-0.5">Orders above ₹299 get free delivery</p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                                {numRestaurants > 1
+                                    ? 'A single rider may pick up your whole order, or we may dispatch multiple riders to ensure it arrives hot! Base delivery fee applies with extra distance surcharge.'
+                                    : 'Orders above ₹299 get free delivery'}
+                            </p>
                         </div>
                         <span className="text-2xl">{amountForFreeDelivery > 0 ? '🛵' : '✨'}</span>
                     </div>
-                    <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
-                        <div
-                            className="bg-brand-500 h-full rounded-full transition-all duration-500 ease-out"
-                            style={{ width: `${freeDeliveryProgress}%` }}
-                        />
-                    </div>
+                    {numRestaurants === 1 && (
+                        <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                            <div
+                                className="bg-brand-500 h-full rounded-full transition-all duration-500 ease-out"
+                                style={{ width: `${freeDeliveryProgress}%` }}
+                            />
+                        </div>
+                    )}
                 </div>
 
                 {/* Items */}
                 <div className="card p-0 overflow-hidden divide-y divide-white/5">
-                    {items.map(item => (
-                        <div key={item.id} id={`cart-item-${item.id}`} className="card flex items-center gap-4">
-                            <div className="flex-1 min-w-0">
-                                <p className="font-medium truncate">{item.name}</p>
-                                <p className="text-brand-500 text-sm font-semibold">₹{item.price} × {item.quantity} = ₹{(item.price * item.quantity).toFixed(0)}</p>
+                    {Object.entries(groupedItems).map(([rName, rItems]) => (
+                        <div key={rName}>
+                            <div className="bg-white/5 px-4 py-2 text-sm font-bold text-gray-300">
+                                {rName}
                             </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                                <button id={`dec-${item.id}`} onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                    className="w-8 h-8 rounded-full bg-white/10 hover:bg-brand-500 flex items-center justify-center font-bold transition-colors">−</button>
-                                <span className="w-5 text-center font-semibold">{item.quantity}</span>
-                                <button id={`inc-${item.id}`} onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                    className="w-8 h-8 rounded-full bg-white/10 hover:bg-brand-500 flex items-center justify-center font-bold transition-colors">+</button>
+                            <div className="divide-y divide-white/5">
+                                {rItems.map(item => (
+                                    <div key={item.id} id={`cart-item-${item.id}`} className="p-4 flex items-center gap-4">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-medium truncate">{item.name}</p>
+                                            <p className="text-brand-500 text-sm font-semibold">₹{item.price} × {item.quantity} = ₹{(item.price * item.quantity).toFixed(0)}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <button id={`dec-${item.id}`} onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                                className="w-8 h-8 rounded-full bg-white/10 hover:bg-brand-500 flex items-center justify-center font-bold transition-colors">−</button>
+                                            <span className="w-5 text-center font-semibold">{item.quantity}</span>
+                                            <button id={`inc-${item.id}`} onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                className="w-8 h-8 rounded-full bg-white/10 hover:bg-brand-500 flex items-center justify-center font-bold transition-colors">+</button>
+                                        </div>
+                                        <button id={`remove-${item.id}`} onClick={() => removeItem(item.id)}
+                                            className="text-red-400 hover:text-red-300 text-lg ml-1">🗑️</button>
+                                    </div>
+                                ))}
                             </div>
-                            <button id={`remove-${item.id}`} onClick={() => removeItem(item.id)}
-                                className="text-red-400 hover:text-red-300 text-lg ml-1">🗑️</button>
                         </div>
                     ))}
                 </div>

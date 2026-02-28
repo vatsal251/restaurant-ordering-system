@@ -14,6 +14,12 @@ export const setupSocketHandlers = (io) => {
             console.log(`Socket ${socket.id} joined restaurant room for user ${userId}`)
         })
 
+        // Join group order room
+        socket.on('JOIN_GROUP_ORDER_ROOM', ({ groupOrderId }) => {
+            socket.join(`group_order:${groupOrderId}`)
+            console.log(`Socket ${socket.id} joined group order room: ${groupOrderId}`)
+        })
+
         // Delivery partner streams their GPS location
         socket.on('LOCATION_UPDATE', async ({ orderId, lat, lng }) => {
             // Broadcast to customers tracking this order
