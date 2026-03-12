@@ -151,241 +151,236 @@ export default function Home() {
     }, [])
 
     return (
-        <div className="min-h-screen pb-20">
+        <div className="min-h-screen bg-gray-50 pb-20">
             {/* Top Bar (Sticky) */}
-            <div className="sticky top-0 z-20 bg-[#0f0f0f] border-b border-white/5 pt-3 pb-2 px-4 shadow-sm shadow-black/50">
-                <div className="flex justify-between items-center mb-3">
-                    <div>
-                        <div className="flex items-center gap-1.5 text-brand-500 font-bold">
-                            <span className="text-xl">📍</span>
-                            <span className="text-lg">{locationName}</span>
-                            <span>▽</span>
+            <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-gray-100 pt-3 pb-3 px-4 shadow-sm">
+                <div className="max-w-7xl mx-auto">
+                    <div className="flex justify-between items-center mb-4">
+                        <div className="flex items-center gap-4">
+                            <h1 className="text-2xl font-black text-gray-900 tracking-tight italic">Foodie<span className="text-brand-600">Premium</span></h1>
+                            <div className="hidden md:block w-px h-8 bg-gray-200 mx-2"></div>
+                            <div className="cursor-pointer group">
+                                <div className="flex items-center gap-1.5 text-gray-800 font-bold group-hover:text-brand-600 transition-colors">
+                                    <span className="text-xl text-brand-500">📍</span>
+                                    <span className="text-lg">{locationName}</span>
+                                    <span className="text-xs text-gray-400">▼</span>
+                                </div>
+                                <p className="text-gray-500 text-sm truncate w-48 mt-0.5">{subLocation}</p>
+                            </div>
                         </div>
-                        <p className="text-gray-400 text-sm truncate w-48 mt-0.5">{subLocation}</p>
-                    </div>
-                    {user ? (
-                        <div className="flex items-center gap-3">
-                            <span className="text-brand-500 font-bold bg-brand-500/10 px-3 py-1.5 rounded-full border border-brand-500/20 shadow-[0_0_10px_rgba(255,107,107,0.1)]">
-                                {user.name.split(' ')[0]}
-                            </span>
-                            <Link to="/profile" className="w-10 h-10 rounded-full bg-[#1a1a1a] flex items-center justify-center text-xl border border-white/10 hover:border-brand-500/50 transition-colors">
-                                👤
-                            </Link>
-                        </div>
-                    ) : (
-                        <Link to="/login" className="btn-primary px-5 py-2 text-sm">Login</Link>
-                    )}
-                </div>
-
-                {/* Simulated search bar -> redirects to /search */}
-                <Link to="/search" className="block relative mb-2">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">🔍</span>
-                    <div className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-9 pr-4 text-sm text-gray-400 font-medium">
-                        Search for "Pizza"
-                    </div>
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-500 font-bold">| 🎙️</span>
-                </Link>
-
-                {/* AI Assistant Feature Link */}
-                <Link to="/ai-assistant" className="block mt-3 bg-gradient-to-r from-purple-600 to-brand-500 rounded-xl p-4 text-white hover:scale-[1.02] transition-transform shadow-[0_0_15px_rgba(168,85,247,0.3)] border border-white/20 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20"></div>
-                    <div className="flex justify-between items-center relative z-10">
-                        <div>
-                            <h3 className="font-bold text-lg flex items-center gap-1">Ask AI Dietitian ✨</h3>
-                            <p className="text-sm text-white/90 mt-0.5">Find high protein, low budget meals instantly</p>
-                        </div>
-                        <span className="text-3xl drop-shadow-md">🤖</span>
-                    </div>
-                </Link>
-
-                {/* Surprise Me Feature Link */}
-                <Link to="/surprise" className="block mt-3 bg-gradient-to-r from-orange-600 to-yellow-500 rounded-xl p-4 text-white hover:scale-[1.02] transition-transform shadow-[0_0_15px_rgba(249,115,22,0.3)] border border-white/20">
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <h3 className="font-bold text-lg">Can't Decide What to Eat? 🎲</h3>
-                            <p className="text-sm text-white/90 mt-0.5">Try our Mood-based Surprise Meal</p>
-                        </div>
-                        <span className="text-3xl drop-shadow-md">🍲</span>
-                    </div>
-                </Link>
-
-                {/* Quick actions: Orders & Cart */}
-                {user && (
-                    <div className="flex flex-col gap-3 mt-3">
-                        <div className="grid grid-cols-2 gap-3">
-                            <Link to="/orders" className="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center justify-center gap-2 hover:bg-white/10 transition-colors">
-                                <span>🧾</span>
-                                <span className="font-semibold text-sm">My Orders</span>
-                            </Link>
-                            {activeGroupId ? (
-                                <Link to={`/group-order/${activeGroupId}`} className="bg-green-500/10 border border-green-500/30 text-green-400 rounded-xl p-3 flex items-center justify-center gap-2 hover:bg-green-500/20 transition-colors">
-                                    <span className="animate-pulse">🟢</span>
-                                    <span className="font-semibold text-sm">Group Cart</span>
+                        {user ? (
+                            <div className="flex items-center gap-4">
+                                <span className="text-gray-600 font-medium">Hello, {user.name.split(' ')[0]}</span>
+                                <Link to="/profile" className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-xl border border-gray-200 hover:border-brand-300 hover:shadow-sm transition-all text-gray-700">
+                                    👤
                                 </Link>
-                            ) : (
-                                <Link to="/cart" className="bg-brand-500/10 border border-brand-500/20 text-brand-500 rounded-xl p-3 flex items-center justify-center gap-2 hover:bg-brand-500/20 transition-colors">
-                                    <span>🛒</span>
-                                    <span className="font-semibold text-sm">Cart</span>
-                                </Link>
-                            )}
-                        </div>
-                        {activeGroupId ? (
-                            <Link to={`/group-order/${activeGroupId}`} className="w-full bg-blue-600/20 border border-blue-500/30 text-blue-400 font-bold rounded-xl p-3 flex items-center justify-center gap-2 hover:bg-blue-600/30 transition-colors">
-                                👥 Return to Active Group Order
-                            </Link>
+                            </div>
                         ) : (
-                            <button onClick={startGroupOrder} disabled={creatingGroup} className="w-full bg-blue-600/20 border border-blue-500/30 text-blue-400 font-bold rounded-xl p-3 flex items-center justify-center gap-2 hover:bg-blue-600/30 transition-colors">
-                                {creatingGroup ? <span className="animate-spin">⏳</span> : '👥 Start a Global Group Order'}
-                            </button>
+                            <div className="flex items-center gap-3">
+                                <Link to="/login" className="text-gray-600 hover:text-gray-900 font-semibold text-sm">Log in</Link>
+                                <Link to="/register" className="bg-brand-600 text-white hover:bg-brand-700 px-5 py-2 text-sm rounded-lg shadow-sm font-bold transition-colors">Sign up</Link>
+                            </div>
                         )}
                     </div>
-                )}
-            </div>
 
-            {/* Auto-rotating Promo Carousel */}
-            <div className="px-4 py-4">
-                <div className={`w-full overflow-hidden rounded-2xl bg-gradient-to-r ${offer.color} p-5 relative border border-white/10 shadow-lg`}>
-                    <div className="flex justify-between items-center relative z-10 transition-all duration-500">
-                        <div>
-                            <p className="text-xs uppercase tracking-wider font-bold text-white/70 mb-1">Special Offer</p>
-                            <h2 className="text-2xl font-black text-white leading-tight">{offer.title}</h2>
-                            <p className="text-sm font-medium text-white/80 mt-1">{offer.sub}</p>
-                            <button className="mt-3 bg-white text-black text-xs font-bold px-4 py-1.5 rounded-full shadow-md">ORDER NOW</button>
-                        </div>
-                        <div className="text-5xl ml-4 drop-shadow-xl">{offer.emoji}</div>
-                    </div>
-                    {/* Progress dots */}
-                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
-                        {OFFERS.map((_, i) => (
-                            <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === offerIdx ? 'w-4 bg-white' : 'w-1.5 bg-white/30'}`} />
-                        ))}
+                    <div className="flex gap-4 items-center">
+                        {/* Search bar */}
+                        <Link to="/search" className="flex-1 relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                            <div className="w-full bg-gray-50/80 border border-gray-200/80 rounded-xl py-3 pl-11 pr-4 text-sm text-gray-500 font-medium shadow-inner hover:bg-white hover:shadow-sm focus:ring-2 focus:ring-brand-500/50 transition-all">
+                                Search for restaurant, cuisine or a dish
+                            </div>
+                        </Link>
+                        {user && (
+                            <div className="flex gap-2 shrink-0">
+                                <Link to="/orders" className="bg-white text-gray-700 border border-gray-200 rounded-xl px-4 py-3 flex items-center gap-2 hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold text-sm shadow-sm">
+                                    🧾 <span className="hidden sm:inline">Orders</span>
+                                </Link>
+                                {activeGroupId ? (
+                                    <Link to={`/group-order/${activeGroupId}`} className="bg-green-500 text-white rounded-xl px-4 py-3 flex items-center gap-2 hover:bg-green-400 transition-colors font-bold text-sm shadow-sm border border-green-400">
+                                        <span className="animate-pulse">🟢</span> <span className="hidden sm:inline">Group</span>
+                                    </Link>
+                                ) : (
+                                    <Link to="/cart" className="bg-white border border-gray-200 text-gray-700 rounded-xl px-4 py-3 flex items-center gap-2 hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold text-sm shadow-sm">
+                                        🛒 <span className="hidden sm:inline">Cart</span>
+                                    </Link>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
 
-            {/* Horizontal Categories */}
-            <div className="px-4 py-2 flex items-center gap-4 overflow-x-auto scrollbar-hide">
-                {cuisines.map(c => (
-                    <button key={c} id={`filter-${c.toLowerCase()}`} onClick={() => setCuisine(c)}
-                        className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium flex items-center gap-1.5 transition-all ${cuisine === c
-                            ? 'bg-brand-500 text-white'
-                            : 'bg-[#1a1a1a] text-gray-400 hover:text-white border border-white/10'}`}>
-                        {CUISINE_EMOJI[c] && <span>{CUISINE_EMOJI[c]}</span>}
-                        {c}
-                    </button>
-                ))}
-            </div>
+            {/* Main Layout */}
+            <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8 mt-8 px-4">
+                {/* Left Sidebar (Filters & Promos) */}
+                <div className="w-full lg:w-72 shrink-0 flex flex-col gap-6">
+                    {/* Filters Section */}
+                    <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
+                        <h3 className="font-bold text-gray-900 mb-4 text-lg">Filters</h3>
 
-            {/* Sort + Open filter toolbar */}
-            <div className="px-4 pb-3 flex items-center gap-2 overflow-x-auto scrollbar-hide">
-                {SORT_OPTIONS.map(opt => (
-                    <button key={opt.id} onClick={() => setSortBy(opt.id)}
-                        className={`whitespace-nowrap text-xs px-3 py-1.5 rounded-full border transition-all ${sortBy === opt.id
-                            ? 'bg-white text-black border-white font-semibold'
-                            : 'bg-white/5 text-gray-400 border-white/10 hover:text-white'}`}>
-                        {opt.label}
-                    </button>
-                ))}
-                <button onClick={() => setShowOpen(o => !o)}
-                    className={`whitespace-nowrap text-xs px-3 py-1.5 rounded-full border transition-all ${showOpen
-                        ? 'bg-green-500 text-white border-green-500'
-                        : 'bg-white/5 text-gray-400 border-white/10 hover:text-white'}`}>
-                    🟢 Open Now
-                </button>
-            </div>
-
-            {/* Restaurant grid */}
-            <div className="px-4 pb-3 pt-2">
-                <h2 className="text-xl font-bold flex items-center gap-2">{mealRec.title}</h2>
-                <p className="text-sm text-gray-400 mt-0.5">{mealRec.sub}</p>
-            </div>
-            <div className="px-4 pb-8">
-                {loading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {[1, 2, 3, 4, 5, 6].map(i => (
-                            <div key={i} className="card animate-pulse h-52">
-                                <div className="w-full h-32 rounded-xl bg-white/5 mb-3" />
-                                <div className="h-4 bg-white/5 rounded w-3/4 mb-2" />
-                                <div className="h-3 bg-white/5 rounded w-1/2" />
+                        <div className="mb-5">
+                            <h4 className="text-sm font-semibold text-gray-500 mb-2 uppercase tracking-wide">Sort By</h4>
+                            <div className="flex flex-col gap-2">
+                                {SORT_OPTIONS.map(opt => (
+                                    <label key={opt.id} className="flex items-center gap-3 cursor-pointer group">
+                                        <input type="radio" name="sort" checked={sortBy === opt.id} onChange={() => setSortBy(opt.id)} className="w-4 h-4 text-brand-600 border-gray-300 focus:ring-brand-500" />
+                                        <span className={`text-sm ${sortBy === opt.id ? 'text-gray-900 font-medium' : 'text-gray-600 group-hover:text-gray-900'}`}>{opt.label}</span>
+                                    </label>
+                                ))}
                             </div>
-                        ))}
+                        </div>
+
+                        <div className="mb-5">
+                            <h4 className="text-sm font-semibold text-gray-500 mb-2 uppercase tracking-wide">Cuisines</h4>
+                            <div className="flex flex-col gap-2">
+                                {cuisines.map(c => (
+                                    <label key={c} className="flex items-center gap-3 cursor-pointer group">
+                                        <input type="radio" name="cuisine" checked={cuisine === c} onChange={() => setCuisine(c)} className="w-4 h-4 text-brand-600 border-gray-300 focus:ring-brand-500" />
+                                        <span className="w-6 text-center">{CUISINE_EMOJI[c]}</span>
+                                        <span className={`text-sm ${cuisine === c ? 'text-gray-900 font-medium' : 'text-gray-600 group-hover:text-gray-900'}`}>{c}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 className="text-sm font-semibold text-gray-500 mb-2 uppercase tracking-wide">Other Filters</h4>
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                                <input type="checkbox" checked={showOpen} onChange={() => setShowOpen(o => !o)} className="w-4 h-4 text-brand-600 border-gray-300 rounded focus:ring-brand-500" />
+                                <span className={`text-sm ${showOpen ? 'text-gray-900 font-medium' : 'text-gray-600 group-hover:text-gray-900'}`}>🟢 Open Now</span>
+                            </label>
+                        </div>
                     </div>
-                ) : filtered.length === 0 ? (
-                    <div className="text-center py-16 text-gray-500">
-                        <div className="text-4xl mb-3">🍽️</div>
-                        <p>No restaurants found</p>
-                        {showOpen && <button onClick={() => setShowOpen(false)} className="text-brand-500 text-sm hover:underline mt-2">Show all restaurants</button>}
+
+                    {/* Promos & Quick Links */}
+                    <div className={`w-full overflow-hidden rounded-2xl bg-gradient-to-r ${offer.color} p-5 relative border border-gray-200 shadow-sm transition-all duration-500`}>
+                        <div className="relative z-10">
+                            <p className="text-xs uppercase tracking-wider font-bold text-gray-700 mb-1">Special Offer</p>
+                            <h2 className="text-xl font-black text-gray-900 leading-tight pr-8">{offer.title}</h2>
+                            <p className="text-sm font-medium text-gray-700 mt-1">{offer.sub}</p>
+                            <button className="mt-4 bg-white text-black text-xs font-bold px-4 py-2 rounded-full shadow border border-gray-100 hover:bg-gray-50 transition-colors">ORDER NOW</button>
+                        </div>
+                        <div className="absolute top-4 right-4 text-4xl opacity-80">{offer.emoji}</div>
                     </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {filtered.map(r => (
-                            <Link key={r.id} to={`/restaurant/${r.id}`} id={`restaurant-${r.id}`}>
-                                <div className="card hover:scale-[1.02] transition-transform cursor-pointer overflow-hidden p-0 relative group">
-                                    <div className="w-full h-40 bg-gradient-to-br from-brand-500/20 to-brand-700/10 flex items-center justify-center text-5xl relative overflow-hidden">
-                                        {r.imageUrl
-                                            ? <img src={r.imageUrl} alt={r.name} className="w-full h-full object-cover" />
-                                            : <span>{CUISINE_EMOJI[r.cuisineType] || '🍽️'}</span>}
 
-                                        {/* Badges Over Image */}
-                                        <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
-                                            {r.isPromoted && <span className="bg-gray-900/80 text-white text-[10px] uppercase px-2 py-0.5 rounded backdrop-blur font-bold border border-white/10">Ad</span>}
-                                            {r.rating > 4.5 && <span className="bg-pink-500 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-lg shadow-pink-500/20">Bestseller</span>}
-                                        </div>
+                    {/* AI Assistant Feature Link */}
+                    <Link to="/ai-assistant" className="block bg-white rounded-2xl p-4 border border-purple-200 hover:border-purple-300 hover:shadow-md transition-all shadow-sm relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-purple-50/50 group-hover:bg-purple-50 transition-colors"></div>
+                        <div className="flex justify-between items-center relative z-10">
+                            <div>
+                                <h3 className="font-bold text-purple-900 text-sm flex items-center gap-1">Ask AI Dietitian ✨</h3>
+                                <p className="text-xs text-purple-700 mt-0.5">Find healthy, budget meals</p>
+                            </div>
+                            <span className="text-2xl drop-shadow-sm">🤖</span>
+                        </div>
+                    </Link>
 
-                                        {/* Bottom Left Badge - Live Order Count / Offers */}
-                                        <div className="absolute bottom-2 left-2 z-10 flex gap-2">
-                                            {r.costForTwo < 400 && <span className="bg-blue-600 border border-blue-400 text-white text-xs font-bold px-2 py-0.5 rounded shadow">Flat ₹100 OFF</span>}
-                                            {r.rating >= 4.0 && <span className="bg-brand-500/90 backdrop-blur text-white text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 shadow-lg">📈 50+ ordered recently</span>}
-                                        </div>
+                    {/* Surprise Me Feature Link */}
+                    <Link to="/surprise" className="block bg-white rounded-2xl p-4 border border-orange-200 hover:border-orange-300 hover:shadow-md transition-all shadow-sm relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-orange-50/50 group-hover:bg-orange-50 transition-colors"></div>
+                        <div className="flex justify-between items-center relative z-10">
+                            <div>
+                                <h3 className="font-bold text-orange-900 text-sm">Can't Decide? 🎲</h3>
+                                <p className="text-xs text-orange-700 mt-0.5">Mood-based Surprise</p>
+                            </div>
+                            <span className="text-2xl drop-shadow-sm">🍲</span>
+                        </div>
+                    </Link>
+                </div>
 
-                                        {!r.isOpen && (
-                                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
-                                                <span className="text-white text-sm font-semibold bg-black/50 px-3 py-1 rounded-full">Closed</span>
-                                            </div>
-                                        )}
-                                        {/* Favorite Toggle Button */}
-                                        <button
-                                            onClick={(e) => toggleFavorite(e, r.id)}
-                                            className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/20 transition-all hover:scale-110 z-30"
-                                        >
-                                            <span className={`text-lg transition-colors ${favorites.has(r.id) ? 'text-brand-500' : 'text-white drop-shadow-md'}`}>
-                                                {favorites.has(r.id) ? '♥' : '♡'}
-                                            </span>
-                                        </button>
-                                    </div>
-                                    <div className="p-4 relative">
-                                        <div className="flex items-start justify-between">
-                                            <div>
-                                                <h3 className="font-semibold text-white text-lg leading-tight flex items-center gap-1">
-                                                    {r.name}
-                                                    {r.isVegOnly && <span className="shrink-0 w-3 h-3 border border-green-600 p-0.5 flex justify-center items-center rounded-sm"><span className="w-1.5 h-1.5 bg-green-600 rounded-full" title="Veg Only"></span></span>}
-                                                </h3>
-                                                <p className="text-gray-400 text-sm mt-0.5">{r.cuisineType}</p>
-                                            </div>
-                                            <div className="flex flex-col items-end gap-1">
-                                                <div className="flex items-center gap-1 bg-green-800 text-white text-sm px-2 py-0.5 rounded-md font-bold shrink-0 shadow">
-                                                    {r.rating || '4.2'} <span className="text-[10px]">⭐</span>
-                                                </div>
-                                                <div className="text-[10px] text-gray-500">{((r.rating || 4.2) * 120).toFixed(0)} ratings</div>
-                                            </div>
-                                        </div>
+                {/* Right Content (Restaurant Grid) */}
+                <div className="flex-1 pb-10">
+                    <div className="mb-6">
+                        <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">{mealRec.title}</h2>
+                        <p className="text-base text-gray-500 mt-1">{mealRec.sub}</p>
+                    </div>
 
-                                        <div className="flex items-center gap-2 mt-3 flex-wrap">
-                                            <span className="bg-white/5 border border-white/10 text-gray-300 text-xs px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
-                                                ⏱️ {r.deliveryTime || 30} mins
-                                            </span>
-                                            <span className="text-gray-500 text-xs text-brand-400 border border-brand-500/30 bg-brand-500/10 px-2 py-0.5 rounded-full font-medium shadow-sm">
-                                                {r.costForTwo > 600 ? 'Free Delivery' : '₹40 Delivery'}
-                                            </span>
-                                            <span className="text-gray-500 text-xs px-2">·</span>
-                                            <span className="text-gray-400 text-xs font-medium">₹{r.costForTwo || 500} for two</span>
-                                        </div>
-                                    </div>
+                    {loading ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <div key={i} className="bg-white border border-gray-100 rounded-2xl p-4 animate-pulse shadow-sm h-64">
+                                    <div className="w-full h-36 rounded-xl bg-gray-200 mb-4" />
+                                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+                                    <div className="h-4 bg-gray-100 rounded w-1/2" />
                                 </div>
-                            </Link>
-                        ))}
-                    </div>
-                )}
+                            ))}
+                        </div>
+                    ) : filtered.length === 0 ? (
+                        <div className="text-center py-20 bg-white border border-gray-100 rounded-2xl shadow-sm">
+                            <div className="text-6xl mb-4 opacity-50">🍽️</div>
+                            <p className="text-lg text-gray-600 font-medium">No restaurants found</p>
+                            {showOpen && <button onClick={() => setShowOpen(false)} className="text-brand-600 font-medium hover:underline mt-2">Clear "Open Now" filter</button>}
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filtered.map(r => (
+                                <Link key={r.id} to={`/restaurant/${r.id}`} id={`restaurant-${r.id}`}>
+                                    <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-xl hover:border-gray-200 transition-all duration-300 group cursor-pointer relative flex flex-col h-full shadow-sm">
+                                        <div className="w-full h-48 bg-gray-100 flex items-center justify-center text-5xl relative overflow-hidden">
+                                            {r.imageUrl
+                                                ? <img src={r.imageUrl} alt={r.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                : <span className="text-gray-300">{CUISINE_EMOJI[r.cuisineType] || '🍽️'}</span>}
+
+                                            {/* Badges Over Image */}
+                                            <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
+                                                {r.isPromoted && <span className="bg-white/90 text-gray-900 text-[10px] uppercase px-2 py-0.5 rounded shadow-sm font-bold tracking-wide">Ad</span>}
+                                                {r.rating > 4.5 && <span className="bg-brand-500 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-sm">Bestseller</span>}
+                                            </div>
+
+                                            {/* Bottom Left Badge - Live Order Count / Offers */}
+                                            <div className="absolute bottom-3 left-3 z-10 flex flex-col gap-1.5 align-start">
+                                                {r.costForTwo < 400 && <span className="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded shadow-md inline-block max-w-max">Flat ₹100 OFF</span>}
+                                                {r.rating >= 4.0 && <span className="bg-white/95 backdrop-blur-sm text-gray-800 text-[10px] px-2 py-1 rounded-md font-medium flex items-center gap-1 shadow inline-block max-w-max">📈 50+ ordered recently</span>}
+                                            </div>
+
+                                            {!r.isOpen && (
+                                                <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center z-20">
+                                                    <span className="text-gray-800 text-sm font-bold bg-white px-4 py-1.5 rounded-full shadow-md border border-gray-200 uppercase tracking-widest">Closed</span>
+                                                </div>
+                                            )}
+                                            {/* Favorite Toggle Button */}
+                                            <button
+                                                onClick={(e) => toggleFavorite(e, r.id)}
+                                                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 flex items-center justify-center shadow-md transition-all hover:scale-110 z-30 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-brand-500"
+                                            >
+                                                <span className={`text-lg transition-colors ${favorites.has(r.id) ? 'text-brand-500' : ''}`}>
+                                                    {favorites.has(r.id) ? '♥' : '♡'}
+                                                </span>
+                                            </button>
+                                        </div>
+                                        <div className="p-4 flex flex-col flex-grow">
+                                            <div className="flex items-start justify-between">
+                                                <div className="pr-2">
+                                                    <h3 className="font-bold text-gray-900 text-lg leading-tight flex items-center gap-1.5 truncate">
+                                                        {r.name}
+                                                        {r.isVegOnly && <span className="shrink-0 w-3 h-3 border border-green-600 p-0.5 flex justify-center items-center rounded-sm"><span className="w-1.5 h-1.5 bg-green-600 rounded-full" title="Veg Only"></span></span>}
+                                                    </h3>
+                                                    <p className="text-gray-500 text-sm mt-1 truncate">{r.cuisineType}</p>
+                                                </div>
+                                                <div className="flex flex-col items-end shrink-0">
+                                                    <div className="flex items-center gap-1 bg-green-600 text-white text-sm px-1.5 py-0.5 rounded font-bold shadow-sm">
+                                                        {r.rating || '4.2'} <span className="text-[10px]">⭐</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-auto pt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-500 border-t border-gray-100">
+                                                <span className="flex items-center gap-1 font-medium">
+                                                    ⏱️ {r.deliveryTime || 30} mins
+                                                </span>
+                                                <span className="text-gray-300">|</span>
+                                                <span className="font-medium">
+                                                    ₹{r.costForTwo || 500} for two
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     )

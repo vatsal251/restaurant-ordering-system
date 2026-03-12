@@ -152,9 +152,9 @@ export default function Checkout() {
     return (
         <div className="min-h-screen pb-36">
             {/* Header */}
-            <div className="sticky top-0 z-10 bg-[#0f0f0f]/95 backdrop-blur border-b border-white/5 flex items-center gap-3 px-4 py-3">
-                <button onClick={() => navigate(-1)} className="text-xl">←</button>
-                <h1 className="font-bold text-lg">Checkout</h1>
+            <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-gray-100 flex items-center gap-3 px-4 py-3 shadow-sm">
+                <button onClick={() => navigate(-1)} className="text-xl text-gray-600 hover:text-gray-900 transition-colors">←</button>
+                <h1 className="font-bold text-lg text-gray-900">Checkout</h1>
             </div>
 
             <div className="px-4 pt-5 space-y-5">
@@ -323,7 +323,7 @@ export default function Checkout() {
             </div>
 
             {/* Place Order — fixed bottom */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0f0f0f]/95 backdrop-blur border-t border-white/10">
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                 <button
                     id="place-order-btn"
                     onClick={placeOrder}

@@ -5,6 +5,21 @@ import { authenticate, requireRole } from '../middlewares/auth.js'
 const router = Router()
 const prisma = new PrismaClient()
 
+// PUT /api/customer/profile
+router.put('/profile', authenticate, requireRole('customer'), async (req, res) => {
+    try {
+        const { name, phone } = req.body
+        const user = await prisma.user.update({
+            where: { id: req.user.id },
+            data: { name, phone }
+        })
+        const safeUser = { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role }
+        res.json(safeUser)
+    } catch (err) {
+        res.status(500).json({ message: 'Failed to update profile' })
+    }
+})
+
 // GET /api/customer/favorites
 router.get('/favorites', authenticate, requireRole('customer'), async (req, res) => {
     try {

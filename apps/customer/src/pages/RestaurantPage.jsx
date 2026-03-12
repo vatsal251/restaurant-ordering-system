@@ -93,232 +93,223 @@ export default function RestaurantPage() {
     if (!restaurant) return <div className="flex items-center justify-center min-h-screen text-gray-400">Restaurant not found</div>
 
     return (
-        <div className="min-h-screen pb-32">
-            {/* Hero Header */}
-            <div className="relative w-full h-52 bg-gradient-to-br from-brand-500/30 to-[#0f0f0f] flex items-end px-4 pb-4 overflow-hidden">
-                {restaurant.imageUrl && (
-                    <img src={restaurant.imageUrl} alt={restaurant.name} className="absolute inset-0 w-full h-full object-cover opacity-30" />
-                )}
-
-                {/* Top Nav actions */}
-                <div className="absolute top-4 left-4 right-4 flex justify-between z-10">
-                    <Link to="/" className="w-10 h-10 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/10 hover:bg-black/80 transition-colors">←</Link>
-                    <button onClick={toggleFav} className="w-10 h-10 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 hover:bg-black/80 transition-all hover:scale-105">
-                        <span className={`text-xl transition-colors ${isFav ? 'text-brand-500 drop-shadow-[0_0_8px_rgba(255,107,107,0.8)]' : 'text-white drop-shadow-md'}`}>
-                            {isFav ? '♥' : '♡'}
-                        </span>
-                    </button>
-                </div>
-
-                <div className="relative z-10 w-full">
-                    <div className="flex items-center gap-2">
-                        <h1 className="text-2xl font-bold">{restaurant.name}</h1>
-                        <button onClick={() => setShowInfo(true)} className="w-6 h-6 rounded-full bg-white/10 text-xs flex items-center justify-center hover:bg-white/20">ℹ️</button>
-                    </div>
-                    <div className="flex items-center gap-3 mt-1.5 text-sm text-gray-300 flex-wrap">
-                        <button onClick={() => setShowInfo(true)} className="flex items-center gap-1 bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-bold shadow-sm shadow-green-500/10 hover:bg-green-500/30 transition-colors">
-                            ⭐ {restaurant.rating || '4.2'} ({restaurant.reviews?.length || 0}) ➔
-                        </button>
-                        {restaurant.cuisineType && <span className="text-gray-400">• {restaurant.cuisineType}</span>}
-                        <span className="text-gray-400">• 25–35 min</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${restaurant.isOpen ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
-                            {restaurant.isOpen ? '● Open Now' : '● Closed'}
-                        </span>
+        <div className="min-h-screen bg-white pb-32 font-sans">
+            {/* Top Navigation */}
+            <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm px-4 py-3">
+                <div className="max-w-7xl mx-auto flex items-center justify-between">
+                    <Link to="/" className="text-gray-600 font-bold hover:text-gray-900 transition-colors text-lg">← Back</Link>
+                    <div className="flex gap-4">
+                        <Link to="/search" className="text-gray-600 hover:text-gray-900 bg-gray-50/80 border border-gray-200/80 hover:bg-white hover:shadow-sm transition-all px-4 py-1.5 rounded-lg text-sm flex items-center gap-2">🔍 Search</Link>
                     </div>
                 </div>
             </div>
 
-            {/* Search within menu */}
-            <div className="px-4 pt-3 pb-1">
-                <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-                    <input
-                        type="search"
-                        placeholder="Search items in this menu…"
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        className="input pl-9 text-sm"
-                    />
+            <div className="max-w-7xl mx-auto px-4 pt-6">
+                {/* Image Banner Grid */}
+                <div className="grid grid-cols-4 grid-rows-2 gap-2 h-[60vh] rounded-2xl overflow-hidden mb-8">
+                    <div className="col-span-2 row-span-2 bg-gray-100">
+                        {restaurant.imageUrl ? <img src={restaurant.imageUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-6xl">🍽️</div>}
+                    </div>
+                    {/* Mock sub-images */}
+                    <div className="bg-gray-200"><img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c" className="w-full h-full object-cover" /></div>
+                    <div className="bg-gray-200"><img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1" className="w-full h-full object-cover" /></div>
+                    <div className="bg-gray-200"><img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38" className="w-full h-full object-cover" /></div>
+                    <div className="bg-gray-200 relative">
+                        <img src="https://images.unsplash.com/photo-1540189549336-e6e99c3679fe" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white font-medium hover:bg-black/50 cursor-pointer">+12 Photos</div>
+                    </div>
                 </div>
-            </div>
 
-            {/* Veg / Non-Veg filter */}
-            <div className="flex items-center gap-2 px-4 py-2">
-                {[
-                    { id: 'all', label: 'All' },
-                    { id: 'veg', label: '🟢 Veg' },
-                    { id: 'nonveg', label: '🔴 Non-Veg' },
-                ].map(opt => (
-                    <button key={opt.id} onClick={() => setVegFilter(opt.id)}
-                        className={`px-3 py-1 rounded-full text-sm border transition-all ${vegFilter === opt.id
-                            ? 'bg-brand-500 text-white border-brand-500'
-                            : 'bg-white/5 text-gray-400 border-white/10 hover:text-white'}`}>
-                        {opt.label}
-                    </button>
-                ))}
-            </div>
-
-            {/* Category pills */}
-            {categories.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto scrollbar-hide px-4 pb-2">
-                    {categories.map(c => (
-                        <button key={c} onClick={() => setFilterCat(c)}
-                            className={`whitespace-nowrap px-3 py-1 rounded-full text-sm transition-all ${filterCat === c
-                                ? 'bg-white/20 text-white'
-                                : 'bg-white/5 text-gray-400 hover:text-white border border-white/10'}`}>
-                            {c}
-                        </button>
-                    ))}
-                </div>
-            )}
-
-            {/* Recommended section (no filter applied) */}
-            {!searchQuery && filterCat === 'All' && vegFilter === 'all' && recommended.length > 0 && (
-                <div className="px-4 mb-2">
-                    <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">🔥 Recommended</h2>
-                    <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
-                        {recommended.map(item => (
-                            <div key={item.id} className="shrink-0 w-36 bg-white/5 rounded-2xl overflow-hidden border border-white/10">
-                                <div className="h-20 bg-gradient-to-br from-brand-500/20 to-transparent flex items-center justify-center text-3xl">
-                                    {item.imageUrl ? <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" /> : '🍽️'}
-                                </div>
-                                <div className="p-2">
-                                    <p className="text-xs font-medium truncate">{item.name}</p>
-                                    <p className="text-brand-500 text-xs font-semibold mt-0.5">₹{item.price}</p>
-                                </div>
+                {/* Header Section */}
+                <div className="flex justify-between items-start mb-6">
+                    <div>
+                        <h1 className="text-4xl font-black text-gray-900 mb-2">{restaurant.name}</h1>
+                        <p className="text-gray-600 text-lg mb-1">{restaurant.cuisineType}</p>
+                        <p className="text-gray-500 text-sm">{restaurant.address || 'Hogwarts, London'} • <span className={restaurant.isOpen ? 'text-green-600 font-medium' : 'text-red-500 font-medium'}>{restaurant.isOpen ? 'Open Now' : 'Closed'}</span></p>
+                    </div>
+                    <div className="flex gap-3">
+                        <div className="flex flex-col items-center justify-center border border-gray-200 rounded-xl p-2 shadow-sm">
+                            <div className="flex items-center gap-1 text-green-700 bg-green-50 px-2 py-1 rounded-lg font-bold text-lg">
+                                {restaurant.rating || '4.2'} ⭐
                             </div>
+                            <div className="text-[11px] text-gray-400 font-medium mt-1 border-t border-gray-100 pt-1 w-full text-center">
+                                {restaurant.reviews?.length || '120'} Reviews
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 mb-8">
+                    <button className="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 text-gray-700 font-medium text-sm transition-colors">
+                        🧭 Direction
+                    </button>
+                    <button onClick={toggleFav} className="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 text-gray-700 font-medium text-sm transition-colors">
+                        <span className={isFav ? 'text-brand-500' : 'text-gray-400'}>{isFav ? '♥' : '♡'}</span> Bookmark
+                    </button>
+                    <button className="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 text-gray-700 font-medium text-sm transition-colors">
+                        🔗 Share
+                    </button>
+                </div>
+
+                {/* Sticky Horizontal Tabs */}
+                <div className="sticky top-[52px] z-30 bg-white border-b border-gray-200 mb-8 pt-2">
+                    <div className="flex gap-8 overflow-x-auto scrollbar-hide">
+                        {['Overview', 'Order Online', 'Reviews', 'Photos', 'Menu'].map(tab => (
+                            <button key={tab} className={`pb-3 text-lg font-medium whitespace-nowrap transition-colors ${tab === 'Order Online' ? 'text-brand-600 border-b-2 border-brand-600' : 'text-gray-500 hover:text-brand-600'}`}>
+                                {tab}
+                            </button>
                         ))}
                     </div>
                 </div>
-            )}
 
-            {/* Menu list */}
-            <div className="px-4 pt-2 space-y-2">
-                {filtered.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500">
-                        <div className="text-4xl mb-3">🔍</div>
-                        <p>No items found</p>
-                    </div>
-                ) : (
-                    filtered.map(item => (
-                        <div key={item.id} className={`card flex items-center gap-4 ${item.isAvailable === false ? 'opacity-50' : ''}`}>
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-0.5">
-                                    <VEG_DOT isVeg={item.isVeg !== false} />
-                                    <p className="font-medium truncate">{item.name}</p>
-                                </div>
-                                {item.description && <p className="text-gray-400 text-sm truncate">{item.description}</p>}
-                                <p className="text-brand-500 font-semibold mt-1">₹{item.price}</p>
-                                {item.isAvailable === false && <p className="text-xs text-red-400 mt-0.5">Currently unavailable</p>}
-                            </div>
-                            {item.imageUrl && (
-                                <img src={item.imageUrl} alt={item.name} className="w-16 h-16 rounded-xl object-cover shrink-0" />
-                            )}
-                            <div className="flex flex-col items-center gap-1 shrink-0">
-                                {getItemQty(item.id) > 0 ? (
-                                    <div className="flex items-center gap-1.5">
-                                        <button onClick={() => updateQuantity(item.id, getItemQty(item.id) - 1)}
-                                            className="w-7 h-7 rounded-full bg-brand-500/20 text-brand-500 flex items-center justify-center font-bold hover:bg-brand-500/40">−</button>
-                                        <span className="font-semibold w-4 text-center text-sm">{getItemQty(item.id)}</span>
-                                        <button id={`add-${item.id}`} onClick={() => handleAddItem(item)}
-                                            className="w-7 h-7 rounded-full bg-brand-500 text-white flex items-center justify-center font-bold hover:bg-brand-600">+</button>
-                                    </div>
-                                ) : (
+                {/* 3-Column Layout for "Order Online" */}
+                <div className="flex flex-col lg:flex-row gap-8 relative">
+
+                    {/* Left Column: Categories */}
+                    <div className="hidden lg:block w-64 shrink-0">
+                        <div className="sticky top-[140px]">
+                            <h3 className="text-gray-400 font-bold uppercase tracking-wider text-xs mb-4">Categories</h3>
+                            <div className="flex flex-col border-r border-gray-100 pr-4">
+                                {categories.map(c => (
                                     <button
-                                        id={`add-${item.id}`}
-                                        onClick={() => item.isAvailable !== false && handleAddItem(item)}
-                                        disabled={item.isAvailable === false}
-                                        className="btn-primary text-sm px-3 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        key={c}
+                                        onClick={() => setFilterCat(c)}
+                                        className={`text-left py-3 text-base font-medium border-r-2 -mr-[2px] pr-4 transition-colors ${filterCat === c ? 'text-brand-600 border-brand-600 bg-brand-50/50' : 'text-gray-600 border-transparent hover:text-brand-600'}`}
                                     >
-                                        + Add
+                                        {c}
                                     </button>
-                                )}
+                                ))}
                             </div>
                         </div>
-                    ))
-                )}
-            </div>
+                    </div>
 
-            {/* Floating cart bar */}
-            {cartCount > 0 && (
-                <Link to={activeGroupId ? `/group-order/${activeGroupId}` : "/cart"} className={`fixed bottom-6 left-4 right-4 ${activeGroupId ? 'bg-green-600 hover:bg-green-500 shadow-green-500/30' : 'bg-brand-500 hover:bg-brand-600 shadow-brand-500/30'} text-white font-semibold px-5 py-4 rounded-2xl flex items-center justify-between shadow-lg transition-colors z-50`}>
-                    <span className="bg-white/20 px-2 py-0.5 rounded-lg text-sm">{cartCount} item{cartCount > 1 ? 's' : ''}</span>
-                    <span>{activeGroupId ? 'View Group Cart →' : 'View Cart →'}</span>
-                    <span>₹{totalPrice().toFixed(0)}</span>
-                </Link>
-            )}
-
-            {/* Restaurant Info & Reviews Sheet */}
-            {showInfo && (
-                <div className="fixed inset-0 bg-black/80 z-[100] flex items-end animate-in fade-in duration-200" onClick={() => setShowInfo(false)}>
-                    <div className="w-full max-h-[85vh] overflow-y-auto bg-[#1a1a1a] rounded-t-3xl p-6 relative animate-in slide-in-from-bottom" onClick={e => e.stopPropagation()}>
-                        <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-6" />
-
-                        <h2 className="text-2xl font-bold mb-1">{restaurant.name}</h2>
-                        <p className="text-gray-400 text-sm mb-4">{restaurant.cuisineType}</p>
-
-                        <div className="card space-y-4 mb-6 !bg-white/5 border-none">
-                            <div className="flex gap-3">
-                                <span className="text-xl">📍</span>
-                                <div>
-                                    <p className="text-sm text-white font-medium">Outlet - Location</p>
-                                    <p className="text-xs text-gray-400 mt-0.5">{restaurant.address}</p>
-                                </div>
+                    {/* Middle Column: Menu Items */}
+                    <div className="flex-1 min-w-0">
+                        {/* Search and Filters */}
+                        <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-6">
+                            <div className="relative w-full sm:w-72">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                                <input
+                                    type="search"
+                                    placeholder="Search dish..."
+                                    value={searchQuery}
+                                    onChange={e => setSearchQuery(e.target.value)}
+                                    className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 shadow-sm"
+                                />
                             </div>
-                            <div className="flex gap-3 border-t border-white/5 pt-3">
-                                <span className="text-xl">⏱️</span>
-                                <div>
-                                    <p className="text-sm text-white font-medium">Opening Hours</p>
-                                    <p className="text-xs text-gray-400 mt-0.5">10:00 AM - 11:30 PM (Today)</p>
-                                </div>
+                            <div className="flex gap-2 w-full sm:w-auto">
+                                <label className="flex items-center gap-2 cursor-pointer bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm shadow-sm hover:bg-gray-50 z-20">
+                                    <input type="radio" name="veg" checked={vegFilter === 'all'} onChange={() => setVegFilter('all')} className="text-brand-600 focus:ring-brand-500" />
+                                    <span className="text-gray-700 font-medium">All</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer bg-white border border-green-200 rounded-lg px-3 py-2 text-sm shadow-sm hover:bg-green-50 z-20">
+                                    <input type="radio" name="veg" checked={vegFilter === 'veg'} onChange={() => setVegFilter('veg')} className="text-green-600 focus:ring-green-500" />
+                                    <span className="text-green-700 font-medium flex items-center gap-1"><VEG_DOT isVeg={true} /> Veg</span>
+                                </label>
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-bold text-lg">Reviews ({restaurant.reviews?.length || 0})</h3>
-                            <span className="flex items-center gap-1 bg-green-500/20 text-green-400 px-2 py-0.5 rounded-lg font-bold text-sm">
-                                ⭐ {restaurant.rating || '4.2'}
-                            </span>
-                        </div>
-
-                        <div className="space-y-3">
-                            {restaurant.reviews && restaurant.reviews.length > 0 ? (
-                                restaurant.reviews.map(rev => (
-                                    <div key={rev.id} className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-8 h-8 rounded-full bg-brand-500/20 text-brand-500 flex items-center justify-center font-bold text-xs uppercase">
-                                                    {rev.customer?.name?.[0] || 'A'}
-                                                </div>
-                                                <p className="text-sm font-medium">{rev.customer?.name || 'Anonymous'}</p>
-                                            </div>
-                                            <span className={`text-xs px-1.5 py-0.5 rounded font-bold ${rev.rating >= 4 ? 'bg-green-500/20 text-green-400' : rev.rating === 3 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
-                                                ★ {rev.rating}
-                                            </span>
+                        {/* Menu List */}
+                        <div className="space-y-6">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-6">{filterCat === 'All' ? 'Recommended' : filterCat}</h2>
+                            {filtered.length === 0 ? (
+                                <div className="text-center py-12 text-gray-400">No items found.</div>
+                            ) : (
+                                filtered.map(item => (
+                                    <div key={item.id} className={`flex gap-4 border-b border-gray-100 pb-6 ${item.isAvailable === false ? 'opacity-50 grayscale' : ''}`}>
+                                        <div className="flex-1 pr-4">
+                                            <div className="mb-1.5"><VEG_DOT isVeg={item.isVeg !== false} /></div>
+                                            <h3 className="font-bold text-gray-900 text-lg mb-1">{item.name}</h3>
+                                            <p className="font-medium text-gray-800 mb-2">₹{item.price}</p>
+                                            {item.description && <p className="text-gray-500 text-sm leading-relaxed max-w-xl">{item.description}</p>}
                                         </div>
-                                        {rev.comment && <p className="text-sm text-gray-300 ml-10">{rev.comment}</p>}
-                                        <p className="text-[10px] text-gray-500 mt-2 ml-10">{new Date(rev.createdAt).toLocaleDateString()}</p>
+                                        <div className="w-36 h-36 shrink-0 relative">
+                                            {item.imageUrl ? (
+                                                <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover rounded-2xl shadow-sm border border-gray-100" />
+                                            ) : (
+                                                <div className="w-full h-full bg-gray-50 border border-gray-100 rounded-2xl flex items-center justify-center text-3xl">🍲</div>
+                                            )}
+
+                                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[80%] z-20">
+                                                {getItemQty(item.id) > 0 ? (
+                                                    <div className="flex items-center justify-between bg-white/95 backdrop-blur border-brand-500 border rounded-lg shadow-md text-brand-600 font-bold overflow-hidden">
+                                                        <button onClick={() => updateQuantity(item.id, getItemQty(item.id) - 1)} className="px-3 py-2 hover:bg-brand-50 transition-colors flex-1 text-center">−</button>
+                                                        <span className="text-sm px-1 font-bold">{getItemQty(item.id)}</span>
+                                                        <button onClick={() => handleAddItem(item)} className="px-3 py-2 hover:bg-brand-50 transition-colors flex-1 text-center">+</button>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => item.isAvailable !== false && handleAddItem(item)}
+                                                        disabled={item.isAvailable === false}
+                                                        className="w-full bg-white/95 backdrop-blur border text-green-600 border-gray-300 rounded-lg shadow-md font-extrabold px-4 py-2 hover:shadow-lg hover:bg-gray-50 transition-all uppercase text-sm tracking-wide disabled:opacity-50"
+                                                    >
+                                                        ADD <span className="absolute top-1 right-2 text-[10px] text-green-500">+</span>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 ))
-                            ) : (
-                                <p className="text-sm text-gray-500 text-center py-4">No reviews yet.</p>
                             )}
                         </div>
+                    </div>
 
-                        <div className="mt-8 pt-4 border-t border-white/5 space-y-3">
-                            <div className="flex items-center gap-3 p-3 bg-blue-900/20 border border-blue-500/20 rounded-xl">
-                                <span className="text-2xl">🛡️</span>
-                                <div>
-                                    <p className="text-sm text-blue-400 font-bold">Safety & Hygiene Verified</p>
-                                    <p className="text-xs text-gray-400">Regular temperature checks & sanitized kitchens.</p>
+                    {/* Right Column: Cart Widget */}
+                    <div className="hidden lg:block w-80 shrink-0">
+                        <div className="sticky top-[140px] bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+                            <h3 className="font-bold text-gray-900 text-lg mb-6">Your Cart {cartCount > 0 ? `(${cartCount})` : ''}</h3>
+                            {cartCount > 0 ? (
+                                <>
+                                    <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 mb-6 scrollbar-hide">
+                                        {cartItems.map(item => (
+                                            <div key={item.id} className="flex justify-between items-start text-sm group">
+                                                <div className="flex-1 pr-4">
+                                                    <div className="flex items-start gap-1.5 align-top">
+                                                        <span className="mt-1"><VEG_DOT isVeg={item.isVeg !== false} /></span>
+                                                        <span className="font-semibold text-gray-800 leading-tight">{item.name}</span>
+                                                    </div>
+                                                    <div className="font-medium text-gray-600 mt-1 pl-6">₹{item.price}</div>
+                                                </div>
+                                                <div className="flex items-center justify-between bg-white border border-green-600 rounded-md shadow-sm text-green-600 font-bold w-16 text-xs h-7 shrink-0">
+                                                    <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="px-1.5 h-full hover:bg-green-50 transition-colors">−</button>
+                                                    <span>{item.quantity}</span>
+                                                    <button onClick={() => handleAddItem(item)} className="px-1.5 h-full hover:bg-green-50 transition-colors">+</button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="border-t border-dashed border-gray-300 pt-4 mb-6">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="font-medium text-gray-600">Subtotal</span>
+                                            <span className="font-bold text-gray-900 text-lg">₹{totalPrice().toFixed(0)}</span>
+                                        </div>
+                                        <p className="text-xs text-gray-500">Extra charges may apply</p>
+                                    </div>
+                                    <button onClick={() => navigate(activeGroupId ? `/group-order/${activeGroupId}` : "/cart")} className="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/30 transition-all active:scale-95 text-lg">
+                                        Checkout ➔
+                                    </button>
+                                </>
+                            ) : (
+                                <div className="text-center text-gray-400 py-10">
+                                    <div className="text-5xl mb-4 grayscale opacity-20">🛒</div>
+                                    <p className="text-lg font-medium text-gray-500">Cart is empty</p>
+                                    <p className="text-sm mt-2 px-4 max-w-[250px] mx-auto">Good food is always cooking! Go ahead, order some yummy items from the menu.</p>
                                 </div>
-                            </div>
-                            <div className="flex gap-2 items-center text-xs text-gray-500">
-                                <span className="opacity-50 grayscale">🏢</span>
-                                <span>FSSAI Lic. No. {restaurant.fssaiLicense || `100200820${restaurant.id.slice(-4, -1)}`}</span>
-                            </div>
+                            )}
                         </div>
                     </div>
+
+                </div>
+            </div>
+
+            {/* Mobile Bottom Cart Bar */}
+            {cartCount > 0 && (
+                <div className="lg:hidden fixed bottom-6 left-4 right-4 z-50">
+                    <button onClick={() => navigate(activeGroupId ? `/group-order/${activeGroupId}` : "/cart")} className="w-full bg-brand-500 text-white font-bold px-5 py-4 rounded-2xl flex items-center justify-between shadow-xl shadow-brand-500/30">
+                        <span className="bg-white/20 px-2.5 py-1 rounded flex items-center gap-1 text-sm font-semibold">{cartCount} items | ₹{totalPrice().toFixed(0)}</span>
+                        <span className="flex items-center gap-2 text-lg">View Cart <span className="text-xl">➔</span></span>
+                    </button>
                 </div>
             )}
         </div>

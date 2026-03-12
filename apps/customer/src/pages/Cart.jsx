@@ -75,7 +75,7 @@ export default function Cart() {
 
     if (activeGroupId) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center gap-4 bg-[#0f0f0f]">
+            <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center gap-4 bg-gray-50 text-gray-900">
                 <div className="text-7xl animate-pulse mb-2">👥</div>
                 <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-brand-500">Group Order Active!</h1>
                 <p className="text-gray-400 max-w-sm">You are currently participating in a Group Order. The regular cart is disabled until the group order is completed or left.</p>
@@ -101,11 +101,11 @@ export default function Cart() {
     return (
         <div className="min-h-screen pb-36">
             {/* Header */}
-            <div className="sticky top-0 z-10 bg-[#0f0f0f]/95 backdrop-blur border-b border-white/5 flex items-center gap-3 px-4 py-3">
-                <button onClick={() => navigate(-1)} className="text-xl">←</button>
+            <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-gray-100 flex items-center gap-3 px-4 py-3 shadow-sm">
+                <button onClick={() => navigate(-1)} className="text-xl text-gray-600 hover:text-gray-900 transition-colors">←</button>
                 <div>
-                    <h1 className="font-bold text-lg">Your Cart</h1>
-                    <p className="text-gray-400 text-xs">Multi-Restaurant Global Cart</p>
+                    <h1 className="font-bold text-lg text-gray-900">Your Cart</h1>
+                    <p className="text-gray-500 text-xs">Multi-Restaurant Global Cart</p>
                 </div>
             </div>
 
@@ -266,7 +266,7 @@ export default function Cart() {
             </div>
 
             {/* Fixed bottom checkout button */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0f0f0f]/95 backdrop-blur border-t border-white/10">
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                 <Link to="/checkout" id="checkout-btn" state={{ discount, couponCode: appliedCoupon?.code, donation, platformFee, packagingFee, surgeFee }}
                     className="btn-primary w-full flex items-center justify-between px-6 py-4 text-base shadow-xl shadow-brand-500/20">
                     <div className="flex flex-col items-start gap-1">
