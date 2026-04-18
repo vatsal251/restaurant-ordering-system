@@ -4,21 +4,22 @@ import helmet from 'helmet'
 import morgan from 'morgan'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
+import rateLimit from 'express-rate-limit'
 import 'dotenv/config'
 
-import authRoutes from './routes/auth.js'
-import customerRoutes from './routes/customer.js'
-import restaurantRoutes from './routes/restaurants.js'
-import deliveryRoutes from './routes/delivery.js'
-import adminRoutes from './routes/admin.js'
-import orderRoutes from './routes/orders.js'
-import sealRoutes from './routes/seal.js'
-import searchRoutes from './routes/search.js'
-import surpriseRoutes from './routes/surprise.js'
-import addressRoutes from './routes/addresses.js'
-import uploadRoutes from './routes/upload.js'
-import aiRoutes from './routes/ai.js'
-import groupOrderRoutes from './routes/groupOrder.js'
+import authRoutes from './modules/auth/auth.routes.js'
+import customerRoutes from './modules/users/users.routes.js'
+import restaurantRoutes from './modules/restaurants/restaurants.routes.js'
+import deliveryRoutes from './modules/delivery/delivery.routes.js'
+import adminRoutes from './modules/admin/admin.routes.js'
+import orderRoutes from './modules/orders/orders.routes.js'
+import sealRoutes from './modules/seal/seal.routes.js'
+import searchRoutes from './modules/search/search.routes.js'
+import surpriseRoutes from './modules/surprise/surprise.routes.js'
+import addressRoutes from './modules/addresses/addresses.routes.js'
+import uploadRoutes from './modules/upload/upload.routes.js'
+import aiRoutes from './modules/ai/ai.routes.js'
+import groupOrderRoutes from './modules/groupOrder/groupOrder.routes.js'
 import { setupSocketHandlers } from './sockets/index.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -58,6 +59,20 @@ app.use(cors({
 app.use(morgan('dev'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+
+// Enable trust proxy if deploying behind a reverse proxy (Heroku, AWS ELB, Nginx)
+app.set('trust proxy', 1)
+
+// Rate Limiting (Prevent DDoS/Brute Force on API endpoints)
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes window
+    max: 150, // Limit each IP to 150 requests per `window`
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    message: { message: 'Too many requests originating from this IP, please try again after 15 minutes' }
+})
+
+app.use('/api', apiLimiter)
 
 // Make io accessible to routes
 app.use((req, _res, next) => { req.io = io; next() })
@@ -99,3 +114,5 @@ const PORT = process.env.PORT || 3000
 httpServer.listen(PORT, () => {
     console.log(`🚀 FoodRush API running on http://localhost:${PORT}`)
 })
+
+// trigger restart

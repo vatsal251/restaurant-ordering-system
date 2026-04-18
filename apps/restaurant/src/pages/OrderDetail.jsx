@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { MapPin, Navigation } from 'lucide-react'
+import { io } from 'socket.io-client'
 import api from '../lib/api'
 
 const STATUS_COLORS = {
@@ -23,12 +24,24 @@ export default function OrderDetail() {
     const [order, setOrder] = useState(null)
     const [loading, setLoading] = useState(true)
     const [updating, setUpdating] = useState(false)
+    const [driverLocation, setDriverLocation] = useState(null)
 
     useEffect(() => {
         api.get(`/api/orders/${id}`)
             .then(r => setOrder(r.data))
             .catch(() => { })
             .finally(() => setLoading(false))
+            
+        // Setup Socket Listener for Live Tracking
+        const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3000')
+        socket.emit('JOIN_ORDER_ROOM', { orderId: id })
+        socket.on('LOCATION_UPDATE', (data) => {
+            setDriverLocation({ lat: data.lat, lng: data.lng })
+        })
+
+        return () => {
+            socket.disconnect()
+        }
     }, [id])
 
     const updateStatus = async (status) => {
@@ -95,12 +108,39 @@ export default function OrderDetail() {
                     </div>
                 )}
 
-                {/* Delivery Partner */}
+                {/* Delivery Partner & Live Tracking */}
                 {order.deliveryPartner && (
-                    <div className="card space-y-1 bg-purple-500/5 border-purple-500/20">
-                        <h3 className="font-semibold text-purple-400 uppercase tracking-wide text-xs">Delivery Partner</h3>
-                        <p className="text-sm font-medium">{order.deliveryPartner.name}</p>
-                        <p className="text-xs text-gray-400">📞 {order.deliveryPartner.phone}</p>
+                    <div className="card space-y-3 bg-purple-500/5 border-purple-500/20">
+                        <div>
+                            <h3 className="font-semibold text-purple-400 uppercase tracking-wide text-xs">Delivery Partner</h3>
+                            <p className="text-sm font-medium">{order.deliveryPartner.name}</p>
+                            <p className="text-xs text-gray-400">📞 {order.deliveryPartner.phone}</p>
+                        </div>
+                        
+                        {/* Fake Live Tracking Map Box */}
+                        {(order.status === 'picked_up' || driverLocation) && (
+                            <div className="mt-4 border-t border-purple-500/10 pt-3 relative rounded-xl overflow-hidden h-40 bg-gray-900 border border-purple-500/20 flex flex-col items-center justify-center">
+                                {/* Grid background to simulate map map */}
+                                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(#8b5cf6 1px, transparent 1px), linear-gradient(90deg, #8b5cf6 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+                                
+                                <div className="z-10 text-center animate-pulse">
+                                    <div className="bg-purple-600 p-2 rounded-full inline-block shadow-lg shadow-purple-500/50 mb-2">
+                                        <Navigation className="w-5 h-5 text-white" />
+                                    </div>
+                                    <p className="text-xs font-semibold text-purple-400">Tracking Active</p>
+                                    <div className="text-[10px] text-gray-500 mt-1 font-mono bg-black/50 px-2 py-0.5 rounded">
+                                        {driverLocation ? 
+                                            `LAT: ${driverLocation.lat.toFixed(6)} | LNG: ${driverLocation.lng.toFixed(6)}` : 
+                                            'Waiting for GPS signal...'
+                                        }
+                                    </div>
+                                </div>
+                                <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/50 px-2 py-1 rounded text-[10px] text-gray-400">
+                                    <MapPin className="w-3 h-3 text-brand-500" />
+                                    Restaurant Location
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

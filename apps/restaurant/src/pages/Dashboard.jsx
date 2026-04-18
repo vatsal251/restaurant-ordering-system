@@ -135,6 +135,7 @@ export default function Dashboard() {
                     <Link to="/orders" className="text-gray-400 hover:text-white text-sm">History</Link>
                     <Link to="/menu" className="text-gray-400 hover:text-white text-sm">Menu</Link>
                     <Link to="/promotions" className="text-gray-400 hover:text-white text-sm">Promos</Link>
+                    <Link to="/campaigns" className="text-gray-400 hover:text-white text-sm">Campaigns</Link>
                     <Link to="/analytics" className="text-gray-400 hover:text-white text-sm">Analytics</Link>
                     <Link to="/reviews" className="text-gray-400 hover:text-white text-sm">Reviews</Link>
                     <Link to="/profile" className="text-gray-400 hover:text-white text-sm">Profile</Link>

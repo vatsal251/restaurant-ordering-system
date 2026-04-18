@@ -71,6 +71,7 @@ model Restaurant {
   reviews     Review[]
   favoritedBy Favorite[]
   promoCodes  PromoCode[]
+  Campaign    Campaign[]
 
   @@map("restaurants")
 }
@@ -116,11 +117,14 @@ model MenuItem {
   isAvailable  Boolean    @default(true)
   isVeg        Boolean    @default(true)
   isArchived   Boolean    @default(false)
+  stockCount   Int? // Null means unlimited stock
   moodTags     String[]   @default([])
   createdAt    DateTime   @default(now())
 
   orderItems      OrderItem[]
   groupOrderItems GroupOrderItem[]
+  addOns          MenuItemAddon[]
+  inventoryLogs   InventoryLog[]
 
   @@map("menu_items")
 }
@@ -286,11 +290,11 @@ enum PromoType {
 }
 
 model GroupOrder {
-  id           String           @id @default(cuid())
-  hostId       String
-  host         User             @relation("HostGroupOrders", fields: [hostId], references: [id])
-  status       GroupOrderStatus @default(active)
-  createdAt    DateTime         @default(now())
+  id        String           @id @default(cuid())
+  hostId    String
+  host      User             @relation("HostGroupOrders", fields: [hostId], references: [id])
+  status    GroupOrderStatus @default(active)
+  createdAt DateTime         @default(now())
 
   items GroupOrderItem[]
 
@@ -315,4 +319,45 @@ enum GroupOrderStatus {
   locked
   completed
   cancelled
+}
+
+// -----------------------------------------------------------------------------------------
+// NEW FEATURES: ADD-ONS, INVENTORY, CAMPAIGNS
+// -----------------------------------------------------------------------------------------
+
+model MenuItemAddon {
+  id          String   @id @default(cuid())
+  menuItemId  String
+  menuItem    MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  name        String
+  price       Float    @default(0.0)
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@map("menu_item_addons")
+}
+
+model InventoryLog {
+  id         String   @id @default(cuid())
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  change     Int // e.g., +50 (restock) or -1 (order)
+  reason     String? // e.g., "manual restock", "order placed"
+  createdAt  DateTime @default(now())
+
+  @@map("inventory_logs")
+}
+
+model Campaign {
+  id             String     @id @default(cuid())
+  restaurantId   String
+  restaurant     Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  title          String
+  message        String
+  targetAudience String     @default("all_past_customers") // Can be "all", "inactive_30_days", etc.
+  status         String     @default("draft") // draft, scheduled, sent
+  sentAt         DateTime?
+  createdAt      DateTime   @default(now())
+
+  @@map("campaigns")
 }

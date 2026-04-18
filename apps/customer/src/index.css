@@ -11,8 +11,8 @@
 
   body {
     font-family: 'Inter', sans-serif;
-    background: #0f0f0f;
-    color: #f5f5f5;
+    background: #f9fafb;
+    color: #111827;
     min-height: 100vh;
   }
 
@@ -21,7 +21,7 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: #1a1a1a;
+    background: #f3f4f6;
   }
 
   ::-webkit-scrollbar-thumb {
@@ -32,7 +32,7 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-brand-500 hover:bg-brand-600 text-white font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 active:scale-95;
+    @apply bg-brand-500 hover:bg-brand-600 text-white font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md;
   }
 
   .btn-outline {
@@ -40,11 +40,11 @@
   }
 
   .card {
-    @apply bg-[#1a1a1a] border border-white/10 rounded-2xl p-5 hover:border-brand-500/40 transition-all duration-200;
+    @apply bg-white border border-gray-100 rounded-2xl p-5 hover:border-brand-500/40 transition-all duration-200 shadow-sm hover:shadow-md;
   }
 
   .input {
-    @apply bg-[#252525] border border-white/10 text-white rounded-xl px-4 py-2.5 w-full focus:outline-none focus:border-brand-500 transition-colors placeholder:text-gray-500;
+    @apply bg-white border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 w-full focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors placeholder:text-gray-400 shadow-sm;
   }
 
   .badge {

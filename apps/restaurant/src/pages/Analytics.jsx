@@ -40,7 +40,6 @@ export default function Analytics() {
         return acc
     }, {})
 
-    // Daily revenue trends
     const dailyDataMap = {}
     delivered.forEach(o => {
         const date = new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -48,14 +47,33 @@ export default function Analytics() {
         dailyDataMap[date].revenue += o.totalAmount
         dailyDataMap[date].orders += 1
     })
-    // Sort by actual date and take last 7
     const trendData = Object.values(dailyDataMap)
-    // Note: strictly speaking we should sort by Date, but string 'Nov 3' sorting might be tricky, so let's rely on creation order loosely
 
-    // Fallback if no delivered orders
     if (trendData.length === 0) {
         trendData.push({ date: 'Today', revenue: 0, orders: 0 })
     }
+
+    // Advanced: Orders by Time of Day Heatmap
+    const timeOfDayCounts = { Morning: 0, Lunch: 0, Afternoon: 0, Dinner: 0, LateNight: 0 }
+    orders.forEach(o => {
+        const hour = new Date(o.createdAt).getHours()
+        if (hour >= 6 && hour < 11) timeOfDayCounts.Morning++
+        else if (hour >= 11 && hour < 14) timeOfDayCounts.Lunch++
+        else if (hour >= 14 && hour < 17) timeOfDayCounts.Afternoon++
+        else if (hour >= 17 && hour < 22) timeOfDayCounts.Dinner++
+        else timeOfDayCounts.LateNight++
+    })
+    const timeOfDayData = Object.entries(timeOfDayCounts).map(([time, count]) => ({ time, count }))
+
+    // Advanced: Order Density by Zip Code (Mock Extraction from Address string)
+    // Assuming address format contains zip code at the end, or falls back to generic.
+    const zipCounts = {}
+    orders.forEach(o => {
+        const match = o.deliveryAddress?.match(/\b\d{6}\b/) // Indian 6-digit PIN code
+        const zip = match ? match[0] : 'Other'
+        zipCounts[zip] = (zipCounts[zip] || 0) + 1
+    })
+    const zipData = Object.entries(zipCounts).map(([zip, count]) => ({ zip, count })).sort((a, b) => b.count - a.count).slice(0, 5)
 
     return (
         <div className="min-h-screen pb-10">
@@ -143,6 +161,39 @@ export default function Analytics() {
                                     </div>
                                 </div>
                             ))}
+                        </div>
+
+                        {/* Advanced Analytics Heatmaps */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Time of Day Matrix */}
+                            <div className="card space-y-3">
+                                <h3 className="font-semibold text-sm text-gray-400 uppercase tracking-wide">🕐 Traffic by Time</h3>
+                                <div className="h-44 w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={timeOfDayData} layout="vertical" margin={{ left: 10 }}>
+                                            <XAxis type="number" hide />
+                                            <YAxis type="category" dataKey="time" stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} />
+                                            <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                            <Bar dataKey="count" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+                            
+                            {/* Location ZIP Matrix */}
+                            <div className="card space-y-3">
+                                <h3 className="font-semibold text-sm text-gray-400 uppercase tracking-wide">📍 Top ZIP Codes</h3>
+                                <div className="h-44 w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={zipData} layout="vertical" margin={{ left: 10 }}>
+                                            <XAxis type="number" hide />
+                                            <YAxis type="category" dataKey="zip" stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} />
+                                            <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                            <Bar dataKey="count" fill="#10b981" radius={[0, 4, 4, 0]} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Top items */}

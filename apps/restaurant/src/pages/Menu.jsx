@@ -17,6 +17,11 @@ export default function Menu() {
     const [filterCat, setFilterCat] = useState('All')
     const [uploadingImage, setUploadingImage] = useState(false)
 
+    // Addons State
+    const [showAddonsFor, setShowAddonsFor] = useState(null)
+    const [addonForm, setAddonForm] = useState({ name: '', price: '' })
+    const [savingAddon, setSavingAddon] = useState(false)
+
     const handleImageUpload = async (e) => {
         const file = e.target.files?.[0]
         if (!file) return
@@ -35,8 +40,12 @@ export default function Menu() {
     const fetchMenu = async () => {
         try {
             const { data } = await api.get('/api/restaurants/me/menu')
+            console.log('MENU RESPONSE:', data)
             setItems(data)
-        } catch { setItems([]) }
+        } catch (err) { 
+            console.error('FETCH ERROR:', err)
+            setItems([]) 
+        }
         finally { setLoading(false) }
     }
 
@@ -99,6 +108,41 @@ export default function Menu() {
             await api.put(`/api/restaurants/me/menu/${item.id}`, { ...item, isAvailable: !item.isAvailable })
             setItems(it => it.map(i => i.id === item.id ? { ...i, isAvailable: !i.isAvailable } : i))
         } catch { alert('Failed to update') }
+    }
+
+    const updateStock = async (itemId, change, setUnlimited = false) => {
+        try {
+            const { data } = await api.patch('/api/restaurants/me/inventory', {
+                menuItemId: itemId,
+                change,
+                reason: 'Menu Page Manual Update',
+                setUnlimited
+            })
+            setItems(it => it.map(i => i.id === itemId ? { ...i, stockCount: data.newStock } : i))
+        } catch (err) { alert('Failed to change stock') }
+    }
+
+    const handleAddAddon = async (e, itemId) => {
+        e.preventDefault()
+        setSavingAddon(true)
+        try {
+            const { data } = await api.post('/api/restaurants/me/addons', {
+                menuItemId: itemId,
+                ...addonForm
+            })
+            setItems(it => it.map(i => i.id === itemId ? { ...i, addOns: [...(i.addOns || []), data] } : i))
+            setAddonForm({ name: '', price: '' })
+        } catch (err) { alert('Failed to add Add-on') }
+        finally { setSavingAddon(false) }
+    }
+
+    const handleRemoveAddon = async (itemId, addonId) => {
+        try {
+            await api.delete(`/api/restaurants/me/addons/${addonId}`)
+            setItems(it => it.map(i => i.id === itemId ? { 
+                ...i, addOns: i.addOns.filter(a => a.id !== addonId) 
+            } : i))
+        } catch (err) { alert('Failed to remove Add-on') }
     }
 
     const categories = ['All', ...new Set(items.map(i => i.category).filter(Boolean))]
@@ -173,7 +217,80 @@ export default function Menu() {
                                         )}
                                     </div>
                                     {item.description && <p className="text-xs text-gray-500 truncate mt-0.5">{item.description}</p>}
-                                    <p className="text-brand-500 font-semibold text-sm mt-1">₹{item.price}</p>
+                                    <div className="flex items-center gap-4 mt-2">
+                                        <p className="text-brand-500 font-semibold text-sm">₹{item.price}</p>
+                                        <div className="flex items-center gap-2 bg-gray-900 px-2 py-0.5 rounded-full border border-gray-800">
+                                            <span className="text-xs text-gray-400">Stock:</span>
+                                            {item.stockCount === null ? (
+                                                <span className="text-xs font-semibold text-green-400">Unlimited</span>
+                                            ) : (
+                                                <div className="flex items-center gap-1.5">
+                                                    <button onClick={() => updateStock(item.id, -1)} className="text-gray-400 hover:text-white px-1">-</button>
+                                                    <span className={`text-xs font-bold ${item.stockCount <= 5 ? 'text-red-400' : 'text-gray-200'}`}>{item.stockCount}</span>
+                                                    <button onClick={() => updateStock(item.id, +1)} className="text-gray-400 hover:text-white px-1">+</button>
+                                                </div>
+                                            )}
+                                            <button 
+                                                onClick={() => updateStock(item.id, 0, item.stockCount !== null)} 
+                                                className="text-[10px] text-brand-500 hover:underline ml-1"
+                                            >
+                                                {item.stockCount === null ? 'Limit' : 'Set Unlimited'}
+                                            </button>
+                                        </div>
+                                        <button 
+                                            onClick={() => setShowAddonsFor(showAddonsFor === item.id ? null : item.id)}
+                                            className="text-xs text-gray-400 hover:text-white underline ml-2"
+                                        >
+                                            {item.addOns?.length || 0} Add-ons
+                                        </button>
+                                    </div>
+
+                                    {/* Inline Add-ons Manager */}
+                                    {showAddonsFor === item.id && (
+                                        <div className="mt-3 bg-white/5 rounded-lg p-3 border border-white/10">
+                                            <h4 className="text-xs font-semibold text-gray-300 mb-2 uppercase tracking-wide">Manage Add-ons</h4>
+                                            {item.addOns?.length > 0 && (
+                                                <div className="mb-3 space-y-1">
+                                                    {item.addOns.map(addon => (
+                                                        <div key={addon.id} className="flex items-center justify-between text-sm bg-black/20 px-2 py-1.5 rounded">
+                                                            <span className="text-gray-300">{addon.name} <span className="text-brand-400 text-xs ml-1">+₹{addon.price}</span></span>
+                                                            <button 
+                                                                onClick={() => handleRemoveAddon(item.id, addon.id)}
+                                                                className="text-red-400/70 hover:text-red-400 px-2 text-xs"
+                                                            >×</button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            <form onSubmit={(e) => handleAddAddon(e, item.id)} className="flex items-center gap-2">
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Add-on name (e.g. Extra Cheese)" 
+                                                    className="input py-1.5 text-xs flex-1"
+                                                    value={addonForm.name}
+                                                    onChange={e => setAddonForm({...addonForm, name: e.target.value})}
+                                                    required 
+                                                />
+                                                <input 
+                                                    type="number" 
+                                                    placeholder="₹ Price" 
+                                                    className="input py-1.5 text-xs w-20"
+                                                    value={addonForm.price}
+                                                    onChange={e => setAddonForm({...addonForm, price: e.target.value})}
+                                                    required 
+                                                    min="0"
+                                                />
+                                                <button 
+                                                    type="submit" 
+                                                    disabled={savingAddon}
+                                                    className="btn-primary py-1.5 px-3 text-xs shrink-0"
+                                                >
+                                                    {savingAddon ? '...' : 'Add'}
+                                                </button>
+                                            </form>
+                                        </div>
+                                    )}
+
                                 </div>
                                 <div className="flex items-center gap-2 flex-shrink-0">
                                     {/* Available toggle */}

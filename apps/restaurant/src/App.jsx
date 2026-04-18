@@ -12,6 +12,7 @@ import Profile from './pages/Profile'
 import Orders from './pages/Orders'
 import OrderDetail from './pages/OrderDetail'
 import Reviews from './pages/Reviews'
+import Campaigns from './pages/Campaigns'
 
 const ProtectedRoute = ({ children }) => {
     const token = useAuthStore(s => s.token)
@@ -31,6 +32,7 @@ export default function App() {
                 <Route path="/menu" element={<ProtectedRoute><Menu /></ProtectedRoute>} />
                 <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
                 <Route path="/promotions" element={<ProtectedRoute><Promotions /></ProtectedRoute>} />
+                <Route path="/campaigns" element={<ProtectedRoute><Campaigns /></ProtectedRoute>} />
                 <Route path="/reviews" element={<ProtectedRoute><Reviews /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="*" element={<Navigate to="/" replace />} />

@@ -78,7 +78,7 @@ export default function Cart() {
             <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center gap-4 bg-gray-50 text-gray-900">
                 <div className="text-7xl animate-pulse mb-2">👥</div>
                 <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-brand-500">Group Order Active!</h1>
-                <p className="text-gray-400 max-w-sm">You are currently participating in a Group Order. The regular cart is disabled until the group order is completed or left.</p>
+                <p className="text-gray-500 max-w-sm">You are currently participating in a Group Order. The regular cart is disabled until the group order is completed or left.</p>
                 <Link to={`/group-order/${activeGroupId}`} className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-xl mt-4 shadow-lg transition-transform hover:scale-105 flex items-center gap-2">
                     <span>Return to Shared Cart</span>
                     <span>➔</span>
@@ -89,17 +89,17 @@ export default function Cart() {
 
     if (items.length === 0) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center gap-4">
+            <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center gap-4 bg-gray-50 text-gray-900">
                 <div className="text-7xl">🛒</div>
                 <h1 className="text-2xl font-bold">Your cart is empty</h1>
-                <p className="text-gray-400">Browse restaurants and add items to get started</p>
+                <p className="text-gray-500">Browse restaurants and add items to get started</p>
                 <Link to="/" className="btn-primary mt-2">Browse Restaurants</Link>
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen pb-36">
+        <div className="min-h-screen pb-36 bg-gray-50 text-gray-900">
             {/* Header */}
             <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-gray-100 flex items-center gap-3 px-4 py-3 shadow-sm">
                 <button onClick={() => navigate(-1)} className="text-xl text-gray-600 hover:text-gray-900 transition-colors">←</button>
@@ -119,7 +119,7 @@ export default function Cart() {
                                     ? `Combined Order from ${numRestaurants} places`
                                     : amountForFreeDelivery > 0 ? `Add ₹${amountForFreeDelivery.toFixed(0)} more for Free Delivery` : '🎉 You unlocked Free Delivery!'}
                             </h3>
-                            <p className="text-xs text-gray-400 mt-0.5">
+                            <p className="text-xs text-gray-500 mt-0.5">
                                 {numRestaurants > 1
                                     ? 'A single rider may pick up your whole order, or we may dispatch multiple riders to ensure it arrives hot! Base delivery fee applies with extra distance surcharge.'
                                     : 'Orders above ₹299 get free delivery'}
@@ -128,7 +128,7 @@ export default function Cart() {
                         <span className="text-2xl">{amountForFreeDelivery > 0 ? '🛵' : '✨'}</span>
                     </div>
                     {numRestaurants === 1 && (
-                        <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                        <div className="w-full bg-brand-500/10 h-2 rounded-full overflow-hidden">
                             <div
                                 className="bg-brand-500 h-full rounded-full transition-all duration-500 ease-out"
                                 style={{ width: `${freeDeliveryProgress}%` }}
@@ -138,28 +138,28 @@ export default function Cart() {
                 </div>
 
                 {/* Items */}
-                <div className="card p-0 overflow-hidden divide-y divide-white/5">
+                <div className="card p-0 overflow-hidden divide-y divide-gray-100">
                     {Object.entries(groupedItems).map(([rName, rItems]) => (
                         <div key={rName}>
-                            <div className="bg-white/5 px-4 py-2 text-sm font-bold text-gray-300">
+                            <div className="bg-gray-50 px-4 py-2 text-sm font-bold text-gray-600 border-b border-gray-100">
                                 {rName}
                             </div>
-                            <div className="divide-y divide-white/5">
+                            <div className="divide-y divide-gray-50">
                                 {rItems.map(item => (
-                                    <div key={item.id} id={`cart-item-${item.id}`} className="p-4 flex items-center gap-4">
+                                    <div key={item.id} id={`cart-item-${item.id}`} className="p-4 flex items-center gap-4 hover:bg-gray-50/50 transition-colors">
                                         <div className="flex-1 min-w-0">
-                                            <p className="font-medium truncate">{item.name}</p>
-                                            <p className="text-brand-500 text-sm font-semibold">₹{item.price} × {item.quantity} = ₹{(item.price * item.quantity).toFixed(0)}</p>
+                                            <p className="font-bold truncate text-gray-900">{item.name}</p>
+                                            <p className="text-brand-500 text-sm font-bold mt-0.5">₹{item.price} × {item.quantity} = ₹{(item.price * item.quantity).toFixed(0)}</p>
                                         </div>
                                         <div className="flex items-center gap-2 shrink-0">
                                             <button id={`dec-${item.id}`} onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                                className="w-8 h-8 rounded-full bg-white/10 hover:bg-brand-500 flex items-center justify-center font-bold transition-colors">−</button>
-                                            <span className="w-5 text-center font-semibold">{item.quantity}</span>
+                                                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-brand-500 text-gray-700 hover:text-white flex items-center justify-center font-bold transition-all shadow-sm">−</button>
+                                            <span className="w-5 text-center font-bold text-gray-900">{item.quantity}</span>
                                             <button id={`inc-${item.id}`} onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                                className="w-8 h-8 rounded-full bg-white/10 hover:bg-brand-500 flex items-center justify-center font-bold transition-colors">+</button>
+                                                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-brand-500 text-gray-700 hover:text-white flex items-center justify-center font-bold transition-all shadow-sm">+</button>
                                         </div>
                                         <button id={`remove-${item.id}`} onClick={() => removeItem(item.id)}
-                                            className="text-red-400 hover:text-red-300 text-lg ml-1">🗑️</button>
+                                            className="text-gray-400 hover:text-red-500 text-lg ml-1 p-2 transition-colors">🗑️</button>
                                     </div>
                                 ))}
                             </div>
@@ -210,49 +210,49 @@ export default function Cart() {
                 </div>
 
                 {/* Donation Toggle */}
-                <div className="card flex items-center justify-between p-4 cursor-pointer" onClick={() => setAddDonation(!addDonation)}>
+                <div className="card flex items-center justify-between p-4 cursor-pointer hover:border-brand-500/30 transition-colors" onClick={() => setAddDonation(!addDonation)}>
                     <div className="flex items-center gap-3">
                         <span className="text-2xl">🌱</span>
                         <div>
-                            <p className="font-bold text-sm">Feeding India Donation</p>
-                            <p className="text-xs text-gray-400">Working towards a malnutrition-free nation.</p>
+                            <p className="font-bold text-sm text-gray-900">Feeding India Donation</p>
+                            <p className="text-xs text-gray-500">Working towards a malnutrition-free nation.</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        <span className="text-sm font-semibold">₹2</span>
-                        <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${addDonation ? 'bg-brand-500 border-brand-500' : 'border-white/20'}`}>
-                            {addDonation && <span className="text-white text-xs">✓</span>}
+                        <span className="text-sm font-bold text-gray-700">₹2</span>
+                        <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all shadow-sm ${addDonation ? 'bg-brand-500 border-brand-500 shadow-brand-500/20' : 'border-gray-300 bg-gray-50'}`}>
+                            {addDonation && <span className="text-white text-xs font-bold">✓</span>}
                         </div>
                     </div>
                 </div>
 
                 {/* Bill Summary */}
                 <div className="card space-y-3">
-                    <h2 className="font-semibold text-sm text-gray-400 uppercase tracking-wide">Bill Summary</h2>
-                    <div className="space-y-2 text-sm">
-                        <div className="flex justify-between"><span className="text-gray-400">Item Total</span><span>₹{subtotal.toFixed(0)}</span></div>
-                        <div className="flex justify-between"><span className="text-gray-400">Delivery Fee</span><span>₹{deliveryFee}</span></div>
-                        <div className="flex justify-between"><span className="text-gray-400">Packaging Charges</span><span>₹{packagingFee}</span></div>
+                    <h2 className="font-bold text-sm text-gray-500 uppercase tracking-wider mb-4">Bill Summary</h2>
+                    <div className="space-y-2.5 text-sm font-medium">
+                        <div className="flex justify-between"><span className="text-gray-500">Item Total</span><span className="text-gray-900">₹{subtotal.toFixed(0)}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-500">Delivery Fee</span><span className="text-gray-900">₹{deliveryFee}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-500">Packaging Charges</span><span className="text-gray-900">₹{packagingFee}</span></div>
                         {surgeFee > 0 && (
                             <div className="flex justify-between">
-                                <span className="text-brand-400 flex items-center gap-1">📈 High Demand Surge <span title="Extra fee due to peak hour traffic">ℹ️</span></span>
-                                <span>₹{surgeFee}</span>
+                                <span className="text-brand-500 flex items-center gap-1 font-semibold">📈 High Demand Surge <span title="Extra fee due to peak hour traffic">ℹ️</span></span>
+                                <span className="text-brand-500 font-bold">₹{surgeFee}</span>
                             </div>
                         )}
-                        <div className="flex justify-between"><span className="text-gray-400">Platform Fee</span><span>₹{platformFee}</span></div>
-                        <div className="flex justify-between"><span className="text-gray-400">Taxes (GST)</span><span>₹{taxes}</span></div>
-                        {addDonation && <div className="flex justify-between"><span className="text-gray-400">Feeding India Donation</span><span>₹{donation}</span></div>}
+                        <div className="flex justify-between"><span className="text-gray-500">Platform Fee</span><span className="text-gray-900">₹{platformFee}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-500">Taxes (GST)</span><span className="text-gray-900">₹{taxes}</span></div>
+                        {addDonation && <div className="flex justify-between"><span className="text-gray-500">Feeding India Donation</span><span className="text-gray-900">₹{donation}</span></div>}
                         {discount > 0 && (
-                            <div className="flex justify-between text-green-400">
-                                <span>Coupon Discount ({appliedCoupon?.code})</span>
+                            <div className="flex justify-between text-green-600 font-bold">
+                                <span className="bg-green-50 px-2 py-0.5 rounded">Coupon Discount ({appliedCoupon?.code})</span>
                                 <span>−₹{discount.toFixed(0)}</span>
                             </div>
                         )}
-                        <div className="border-t border-white/10 pt-3 mt-1 flex justify-between font-bold text-base">
-                            <span>To Pay</span><span className="text-brand-500">₹{grandTotal.toFixed(0)}</span>
+                        <div className="border-t border-gray-100 pt-3 mt-2 flex justify-between font-black text-base text-gray-900">
+                            <span>To Pay</span><span className="text-brand-600">₹{grandTotal.toFixed(0)}</span>
                         </div>
                         {discount > 0 && (
-                            <p className="text-green-400 text-xs text-center bg-green-500/10 rounded-lg py-2 mt-2 font-medium border border-green-500/20">
+                            <p className="text-green-700 text-xs text-center bg-green-50 rounded-xl py-2 mt-3 font-bold border border-green-100">
                                 🎉 You're saving ₹{discount.toFixed(0)} on this order!
                             </p>
                         )}
@@ -261,19 +261,19 @@ export default function Cart() {
 
                 <div className="text-center pt-2">
                     <button id="clear-cart-btn" onClick={() => { clearCart(); navigate('/') }}
-                        className="text-sm text-red-400 hover:text-red-300 py-1 transition-colors">🗑️ Clear entire cart</button>
+                        className="text-sm font-medium text-gray-400 hover:text-red-500 py-2 px-4 rounded-xl hover:bg-red-50 transition-all">🗑️ Clear entire cart</button>
                 </div>
             </div>
 
             {/* Fixed bottom checkout button */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 shadow-[0_-8px_20px_-5px_rgba(0,0,0,0.05)] z-20">
                 <Link to="/checkout" id="checkout-btn" state={{ discount, couponCode: appliedCoupon?.code, donation, platformFee, packagingFee, surgeFee }}
-                    className="btn-primary w-full flex items-center justify-between px-6 py-4 text-base shadow-xl shadow-brand-500/20">
-                    <div className="flex flex-col items-start gap-1">
-                        <span className="font-bold">₹{grandTotal.toFixed(0)}</span>
-                        <span className="text-[10px] uppercase tracking-wide opacity-80 decoration-dotted underline">TOTAL</span>
+                    className="btn-primary w-full flex items-center justify-between px-6 py-4 text-base shadow-xl shadow-brand-500/20 ring-2 ring-transparent hover:ring-brand-500/50">
+                    <div className="flex flex-col items-start translate-y-[2px]">
+                        <span className="font-black text-lg leading-none">₹{grandTotal.toFixed(0)}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest opacity-90 mt-1">TOTAL</span>
                     </div>
-                    <span className="font-bold text-lg">Checkout ➔</span>
+                    <span className="font-black text-lg">Checkout ➔</span>
                 </Link>
             </div>
         </div>
